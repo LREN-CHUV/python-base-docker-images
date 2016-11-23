@@ -1,7 +1,0 @@
-python-job:
-  build: Dockerfile
-  image: hbpmip/python-job
-  pre:
-    - echo "Preparing python-job"
-  post:
-    - echo "Finished python-job"
