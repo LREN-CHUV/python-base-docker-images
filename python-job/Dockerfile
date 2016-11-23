@@ -1,4 +1,4 @@
-FROM python-base
+FROM hbpmip/python-base
 
 MAINTAINER mirco.nasuti@chuv.ch
 

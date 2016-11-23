@@ -2,4 +2,4 @@
 
 ## What is it ?
 
-This is a collection of Python Docker images.
+This is a collection of Docker images for Python.
