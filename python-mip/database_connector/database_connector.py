@@ -2,6 +2,51 @@
 
 import psycopg2
 import os
+import datetime
+
+
+def get_job_id():
+    return os.environ['JOB_ID']
+
+
+def get_node():
+    return os.environ['NODE']
+
+
+def get_docker_image():
+    return os.environ['DOCKER_IMAGE']
+
+
+def get_query():
+    return os.environ['PARAM_query']
+
+
+def get_var():
+    return os.environ['PARAM_variables']
+
+
+def get_covars():
+    return os.environ['PARAM_covariables']
+
+
+def get_gvars():
+    return os.environ['PARAM_grouping']
+
+
+def get_code():
+    return os.environ['CODE']
+
+
+def get_name():
+    return os.environ['NAME']
+
+
+def get_model():
+    return os.environ['MODEL']
+
+
+def get_function():
+    return os.environ['FUNCTION']
 
 
 def get_vars_metadata():
@@ -36,7 +81,7 @@ def get_vars_data():
     return data
 
 
-def save_results(job_id, node, timestamp, pfa, error, shape, function):
+def save_job_results(job_id, node, timestamp, pfa, error, shape, function):
     conn = psycopg2.connect(host=os.environ['ANALYTICS_DB_HOST'], port=os.environ['ANALYTICS_DB_PORT'],
                             dbname=os.environ['ANALYTICS_DB_NAME'], user=os.environ['ANALYTICS_DB_USER'],
                             password=os.environ['ANALYTICS_DB_PASSWORD'])
@@ -45,3 +90,8 @@ def save_results(job_id, node, timestamp, pfa, error, shape, function):
                 % (job_id, node, timestamp, pfa, error, shape, function))
     conn.commit()
     conn.close()
+
+
+def save_results(pfa, error, shape):
+    save_job_results(os.environ['JOB_ID'], os.environ['NODE'], datetime.datetime.now(), pfa, error, shape,
+                 os.environ['FUNCTION'])
