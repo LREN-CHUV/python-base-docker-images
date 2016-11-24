@@ -3,6 +3,84 @@
 import psycopg2
 import os
 import datetime
+import re
+from urllib.parse import urlparse
+
+
+'''
+************************************************************************************************************************
+Initialisation
+************************************************************************************************************************
+'''
+
+
+# Parse input environment variables for science-db
+postgresql_url = urlparse(os.environ['IN_JDBC_URL']).path
+parsed_url = urlparse(postgresql_url)
+m = re.search('(.*):([0-9]*)', parsed_url.netloc)
+science_db_host = m.group(1)
+science_db_port = m.group(2)
+m = re.search('/*(.*)', parsed_url.path)
+science_db_name = m.group(1)
+science_db_user = os.environ['IN_JDBC_USER']
+science_db_password = os.environ['IN_JDBC_PASSWORD']
+
+
+# Parse input environment variables for analytics-db
+postgresql_url = urlparse(os.environ['OUT_JDBC_URL']).path
+parsed_url = urlparse(postgresql_url)
+m = re.search('(.*):([0-9]*)', parsed_url.netloc)
+analytics_db_host = m.group(1)
+analytics_db_port = m.group(2)
+m = re.search('/*(.*)', parsed_url.path)
+analytics_db_name = m.group(1)
+analytics_db_user = os.environ['OUT_JDBC_USER']
+analytics_db_password = os.environ['OUT_JDBC_PASSWORD']
+
+
+'''
+************************************************************************************************************************
+Functions read and write databases
+************************************************************************************************************************
+'''
+
+
+def fetch_data():
+    """
+    Fetch data from science-db using the SQL query given through the PARAM_query environment variable
+    :return: A list of tuple where each list element represents a database row
+    and the tuple elements match the database columns.
+    """
+    conn = psycopg2.connect(host=science_db_host, port=science_db_port, dbname=science_db_name, user=science_db_user,
+                            password=science_db_password)
+    cur = conn.cursor()
+    cur.execute(os.environ['PARAM_query'])
+    data = cur.fetchall()
+    return data
+
+
+def save_results(pfa, error, shape):
+    """
+    Store algorithm results into the analytics-db.
+    :param pfa: PFA formated results
+    :param error: Error
+    :param shape: Result shape. For example pfa_json or pfa_yaml.
+    """
+    conn = psycopg2.connect(host=analytics_db_host, port=analytics_db_port, dbname=analytics_db_name,
+                            user=analytics_db_user, password=analytics_db_password)
+    cur = conn.cursor()
+    cur.execute("""INSERT INTO job_result VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s')"""
+                % (os.environ['JOB_ID'], os.environ['NODE'], datetime.datetime.now(), pfa, error, shape,
+                   os.environ['FUNCTION']))
+    conn.commit()
+    conn.close()
+
+
+'''
+************************************************************************************************************************
+Wrapper functions to read environment variables
+************************************************************************************************************************
+'''
 
 
 def get_job_id():
@@ -47,51 +125,3 @@ def get_model():
 
 def get_function():
     return os.environ['FUNCTION']
-
-
-def get_vars_metadata():
-    conn = psycopg2.connect(host=os.environ['META_DB_HOST'], port=os.environ['META_DB_PORT'],
-                            dbname=os.environ['META_DB_NAME'], user=os.environ['META_DB_USER'],
-                            password=os.environ['META_DB_PASSWORD'])
-    cur = conn.cursor()
-    cur.execute("""SELECT hierarchy FROM meta_variables""")
-    metadata = cur.fetchone()[0]
-    conn.close()
-    return metadata
-
-
-def get_vars_names():
-    conn = psycopg2.connect(host=os.environ['SCIENCE_DB_HOST'], port=os.environ['SCIENCE_DB_PORT'],
-                            dbname=os.environ['SCIENCE_DB_NAME'], user=os.environ['SCIENCE_DB_USER'],
-                            password=os.environ['SCIENCE_DB_PASSWORD'])
-    cur = conn.cursor()
-    cur.execute("""SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = 'adni_merge'""")
-    names = [t[0] for t in cur.fetchall()]
-    conn.close()
-    return names
-
-
-def get_vars_data():
-    conn = psycopg2.connect(host=os.environ['SCIENCE_DB_HOST'], port=os.environ['SCIENCE_DB_PORT'],
-                            dbname=os.environ['SCIENCE_DB_NAME'], user=os.environ['SCIENCE_DB_USER'],
-                            password=os.environ['SCIENCE_DB_PASSWORD'])
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM adni_merge""")
-    data = cur.fetchall()
-    return data
-
-
-def save_job_results(job_id, node, timestamp, pfa, error, shape, function):
-    conn = psycopg2.connect(host=os.environ['ANALYTICS_DB_HOST'], port=os.environ['ANALYTICS_DB_PORT'],
-                            dbname=os.environ['ANALYTICS_DB_NAME'], user=os.environ['ANALYTICS_DB_USER'],
-                            password=os.environ['ANALYTICS_DB_PASSWORD'])
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO job_result VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s')"""
-                % (job_id, node, timestamp, pfa, error, shape, function))
-    conn.commit()
-    conn.close()
-
-
-def save_results(pfa, error, shape):
-    save_job_results(os.environ['JOB_ID'], os.environ['NODE'], datetime.datetime.now(), pfa, error, shape,
-                 os.environ['FUNCTION'])
