@@ -48,15 +48,17 @@ Functions read and write databases
 def fetch_data():
     """
     Fetch data from science-db using the SQL query given through the PARAM_query environment variable
-    :return: A list of tuple where each list element represents a database row
-    and the tuple elements match the database columns.
+    :return: A dict containing the columns meta-data 'headers' (see psycopg2 'cursor.description') and a list of tuple
+    'data' where each list element represents a database row and the tuple elements match the database columns.
     """
     conn = psycopg2.connect(host=science_db_host, port=science_db_port, dbname=science_db_name, user=science_db_user,
                             password=science_db_password)
     cur = conn.cursor()
     cur.execute(os.environ['PARAM_query'])
+    headers = cur.description
     data = cur.fetchall()
-    return data
+    conn.close()
+    return {'headers': headers, 'data': data}
 
 
 def save_results(pfa, error, shape):
@@ -84,44 +86,88 @@ Wrapper functions to read environment variables
 
 
 def get_job_id():
+    """
+    Get job ID
+    :return: The job ID as a string
+    """
     return os.environ['JOB_ID']
 
 
 def get_node():
+    """
+    Get data source node
+    :return: The node name as a string
+    """
     return os.environ['NODE']
 
 
 def get_docker_image():
+    """
+    Get Docker image name
+    :return: The Docker image name as a string
+    """
     return os.environ['DOCKER_IMAGE']
 
 
 def get_query():
+    """
+    Get the SQL auto-generated SQL query to get input data
+    :return: The SQL query as a string
+    """
     return os.environ['PARAM_query']
 
 
 def get_var():
+    """
+    Get the variable
+    :return: The variable as a string
+    """
     return os.environ['PARAM_variables']
 
 
 def get_covars():
+    """
+    Get the co-variables
+    :return: The list of co-variables as a comma-separated elements string
+    """
     return os.environ['PARAM_covariables']
 
 
 def get_gvars():
+    """
+    Get the grouping variables
+    :return: The list of grouping variables as a comma-separated elements string
+    """
     return os.environ['PARAM_grouping']
 
 
 def get_code():
+    """
+    Get the algorithm code name
+    :return: The algorithm code name as a string
+    """
     return os.environ['CODE']
 
 
 def get_name():
+    """
+    Get the algorithm name
+    :return: The algorithm name as a string
+    """
     return os.environ['NAME']
 
 
 def get_model():
+    """
+    Get the model name i.e. the output type
+    :return: The model name as a string
+    """
     return os.environ['MODEL']
 
 
 def get_function():
+    """
+    Get the function name
+    :return: The function name as a string
+    """
     return os.environ['FUNCTION']
