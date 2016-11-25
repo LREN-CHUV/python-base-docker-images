@@ -4,7 +4,6 @@ import psycopg2
 import os
 import datetime
 import re
-import json
 from urllib.parse import urlparse
 
 
@@ -61,17 +60,18 @@ Functions read and write databases
 def fetch_data():
     """
     Fetch data from science-db using the SQL query given through the PARAM_query environment variable
-    :return: A dict containing the columns meta-data 'headers' (see psycopg2 'cursor.description') and a list of tuple
-    'data' where each list element represents a database row and the tuple elements match the database columns.
+    :return: A dict containing the columns names 'columns' (see psycopg2 'cursor.description') as a list of strings
+    and a list of tuple 'data' where each list element represents a database row and the tuple elements match the
+    database columns.
     """
     conn = psycopg2.connect(host=science_db_host, port=science_db_port, dbname=science_db_name, user=science_db_user,
                             password=science_db_password)
     cur = conn.cursor()
     cur.execute(os.environ['PARAM_query'])
-    headers = cur.description
+    columns = [d.name for d in cur.description]
     data = cur.fetchall()
     conn.close()
-    return {'headers': headers, 'data': data}
+    return {'columns': columns, 'data': data}
 
 
 def var_type(var):
@@ -159,7 +159,7 @@ def get_covars():
     Get the co-variables
     :return: The list of co-variables as a comma-separated elements string
     """
-    return os.environ['PARAM_covariables']
+    return re.split(', |,', os.environ['PARAM_covariables'])
 
 
 def get_gvars():
@@ -167,7 +167,7 @@ def get_gvars():
     Get the grouping variables
     :return: The list of grouping variables as a comma-separated elements string
     """
-    return os.environ['PARAM_grouping']
+    return re.split(', |,', os.environ['PARAM_grouping'])
 
 
 def get_code():
