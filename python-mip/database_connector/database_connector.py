@@ -85,7 +85,7 @@ def var_type(var):
                             password=meta_db_password)
     cur = conn.cursor()
     cur.execute("""SELECT hierarchy FROM meta_variables""")
-    metadata = cur.fetchall()[0][0]
+    metadata = cur.fetchone()[0]
     conn.close()
     return extract_metadata(var, metadata)
 
