@@ -4,6 +4,7 @@ import psycopg2
 import os
 import datetime
 import re
+import json
 from urllib.parse import urlparse
 
 
@@ -24,6 +25,18 @@ m = re.search('/*(.*)', parsed_url.path)
 science_db_name = m.group(1)
 science_db_user = os.environ['IN_JDBC_USER']
 science_db_password = os.environ['IN_JDBC_PASSWORD']
+
+
+# Parse input environment variables for meta-db
+postgresql_url = urlparse(os.environ['META_JDBC_URL']).path
+parsed_url = urlparse(postgresql_url)
+m = re.search('(.*):([0-9]*)', parsed_url.netloc)
+meta_db_host = m.group(1)
+meta_db_port = m.group(2)
+m = re.search('/*(.*)', parsed_url.path)
+meta_db_name = m.group(1)
+meta_db_user = os.environ['META_JDBC_USER']
+meta_db_password = os.environ['META_JDBC_PASSWORD']
 
 
 # Parse input environment variables for analytics-db
@@ -59,6 +72,22 @@ def fetch_data():
     data = cur.fetchall()
     conn.close()
     return {'headers': headers, 'data': data}
+
+
+def var_type(var):
+    """
+    Get variable type and available values if it's a nominal one
+    :param var: Variable code as a string
+    :return: A dictionary containing the variable type as a string (key 'type')
+    and the available values as a list of string (key 'values')
+    """
+    conn = psycopg2.connect(host=meta_db_host, port=meta_db_port, dbname=meta_db_name, user=meta_db_user,
+                            password=meta_db_password)
+    cur = conn.cursor()
+    cur.execute("""SELECT hierarchy FROM meta_variables""")
+    metadata = cur.fetchall()[0][0]
+    conn.close()
+    return extract_metadata(var, metadata)
 
 
 def save_results(pfa, error, shape):
@@ -171,3 +200,27 @@ def get_function():
     :return: The function name as a string
     """
     return os.environ['FUNCTION']
+
+
+'''
+************************************************************************************************************************
+Util functions
+************************************************************************************************************************
+'''
+
+
+def extract_metadata(var, metadata):
+    var_meta = extract_var_recursive(var, metadata)
+    return {'type': var_meta['type'], 'values': list()}
+
+
+def extract_var_recursive(var, group):
+    if 'variables' in group:
+        for v in group['variables']:
+            if v['code'].lower() == var.lower():
+                return v
+    if 'groups' in group:
+        for sub_group in group['groups']:
+            ret = extract_var_recursive(var, sub_group)
+            if ret:
+                return ret
