@@ -211,7 +211,10 @@ Util functions
 
 def extract_metadata(var, metadata):
     var_meta = extract_var_recursive(var, metadata)
-    return {'type': var_meta['type'], 'values': list()}
+    return {
+        'type': var_meta['type'],
+        'values': [e['code'] for e in var_meta['enumerations']] if 'enumerations' in var_meta else []
+    }
 
 
 def extract_var_recursive(var, group):
