@@ -74,7 +74,11 @@ def var_type(var):
     :return: A dictionary containing the variable type as a string (key 'type')
     and the available values as a list of string (key 'values')
     """
-    return extract_metadata(var, metadata)
+    var_meta = metadata[var]
+    return {
+        'type': var_meta['type'],
+        'values': [e['code'] for e in var_meta['enumerations']] if 'enumerations' in var_meta else []
+    }
 
 
 def save_results(pfa, error, shape):
@@ -187,30 +191,3 @@ def get_function():
     :return: The function name as a string
     """
     return os.environ['FUNCTION']
-
-
-'''
-************************************************************************************************************************
-Util functions
-************************************************************************************************************************
-'''
-
-
-def extract_metadata(var, metadata):
-    var_meta = extract_var_recursive(var, metadata)
-    return {
-        'type': var_meta['type'],
-        'values': [e['code'] for e in var_meta['enumerations']] if 'enumerations' in var_meta else []
-    }
-
-
-def extract_var_recursive(var, group):
-    if 'variables' in group:
-        for v in group['variables']:
-            if v['code'].lower() == var.lower():
-                return v
-    if 'groups' in group:
-        for sub_group in group['groups']:
-            ret = extract_var_recursive(var, sub_group)
-            if ret:
-                return ret
