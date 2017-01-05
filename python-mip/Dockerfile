@@ -12,3 +12,6 @@ RUN conda update psycopg2
 
 COPY scripts/database_connector/database_connector.py /
 COPY scripts/docker-entrypoint.sh /
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["compute"]
