@@ -60,9 +60,13 @@ def fetch_data():
     conn = psycopg2.connect(host=science_db_host, port=science_db_port, dbname=science_db_name, user=science_db_user,
                             password=science_db_password)
     cur = conn.cursor()
-    cur.execute(os.environ['PARAM_query'])
-    columns = [d.name for d in cur.description]
-    data = cur.fetchall()
+    try:
+        cur.execute(os.environ['PARAM_query'])
+        columns = [d.name for d in cur.description]
+        data = cur.fetchall()
+    except psycopg2.ProgrammingError:
+        columns = []
+        data = []
     conn.close()
     return {'columns': columns, 'data': data}
 
