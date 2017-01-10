@@ -78,7 +78,10 @@ def var_type(var):
     :return: A dictionary containing the variable type as a string (key 'type')
     and the available values as a list of string (key 'values')
     """
-    var_meta = metadata[var]
+    try:
+        var_meta = metadata[var]
+    except KeyError:
+        var_meta = {'type': 'unknown', 'enumerations': []}
     return {
         'type': var_meta['type'],
         'values': [e['code'] for e in var_meta['enumerations']] if 'enumerations' in var_meta else []
