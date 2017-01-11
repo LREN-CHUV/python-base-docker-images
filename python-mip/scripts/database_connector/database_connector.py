@@ -83,7 +83,7 @@ def var_type(var):
     except KeyError:
         var_meta = {'type': 'unknown', 'enumerations': []}
     return {
-        'type': var_meta['type'],
+        'type': var_meta['type'] if 'type' in var_meta else 'unknown',
         'values': [e['code'] for e in var_meta['enumerations']] if 'enumerations' in var_meta else []
     }
 
