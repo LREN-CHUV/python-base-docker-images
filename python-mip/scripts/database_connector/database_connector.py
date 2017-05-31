@@ -98,9 +98,10 @@ def save_results(pfa, error, shape):
     conn = psycopg2.connect(host=analytics_db_host, port=analytics_db_port, dbname=analytics_db_name,
                             user=analytics_db_user, password=analytics_db_password)
     cur = conn.cursor()
-    cur.execute("""INSERT INTO job_result VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s')"""
-                % (os.environ['JOB_ID'], os.environ['NODE'], datetime.datetime.now(), pfa, error, shape,
-                   os.environ['FUNCTION']))
+    sql = "INSERT INTO job_result VALUES(%s, %s, %s, %s, %s, %s, %s);"
+    data = (os.environ['JOB_ID'], os.environ['NODE'], datetime.datetime.now(), pfa, error, shape,
+            os.environ['FUNCTION'],)
+    cur.execute(sql, data)
     conn.commit()
     conn.close()
 
