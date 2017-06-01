@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import psycopg2
 import os
 import datetime
@@ -14,20 +15,23 @@ Initialisation
 ************************************************************************************************************************
 '''
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
-# Parse input environment variables for science-db
+
+# Parse input environment variables for the input DB
 postgresql_url = urlparse(os.environ['IN_JDBC_URL']).path
 parsed_url = urlparse(postgresql_url)
 m = re.search('(.*):([0-9]*)', parsed_url.netloc)
-science_db_host = m.group(1)
-science_db_port = m.group(2)
+input_db_host = m.group(1)
+input_db_port = m.group(2)
 m = re.search('/*(.*)', parsed_url.path)
-science_db_name = m.group(1)
-science_db_user = os.environ['IN_JDBC_USER']
-science_db_password = os.environ['IN_JDBC_PASSWORD']
+input_db_name = m.group(1)
+input_db_user = os.environ['IN_JDBC_USER']
+input_db_password = os.environ['IN_JDBC_PASSWORD']
 
 
-# Parse input environment variables for analytics-db
+# Parse input environment variables for the output DB, also called analytics DB
 postgresql_url = urlparse(os.environ['OUT_JDBC_URL']).path
 parsed_url = urlparse(postgresql_url)
 m = re.search('(.*):([0-9]*)', parsed_url.netloc)
@@ -57,14 +61,16 @@ def fetch_data():
     and a list of tuple 'data' where each list element represents a database row and the tuple elements match the
     database columns.
     """
-    conn = psycopg2.connect(host=science_db_host, port=science_db_port, dbname=science_db_name, user=science_db_user,
-                            password=science_db_password)
+    conn = psycopg2.connect(host=input_db_host, port=input_db_port, dbname=input_db_name, user=input_db_user,
+                            password=input_db_password)
     cur = conn.cursor()
+    query = os.environ['PARAM_query']
     try:
-        cur.execute(os.environ['PARAM_query'])
+        cur.execute(query)
         columns = [d.name for d in cur.description]
         data = cur.fetchall()
     except psycopg2.ProgrammingError:
+        logging.warning("Cannot execute the following query on the input DB: %s", query)
         columns = []
         data = []
     conn.close()
@@ -81,6 +87,7 @@ def var_type(var):
     try:
         var_meta = metadata[var]
     except KeyError:
+        logging.warning("Cannot read meta-data for variable %s !", var)
         var_meta = {'type': 'unknown', 'enumerations': []}
     return {
         'type': var_meta['type'] if 'type' in var_meta else 'unknown',
