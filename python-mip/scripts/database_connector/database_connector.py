@@ -165,7 +165,7 @@ def get_covars():
     Get the co-variables
     :return: The list of co-variables as a comma-separated elements string
     """
-    return re.split(', |,', os.environ['PARAM_covariables'])
+    return list(filter(None, re.split(', |,', os.environ['PARAM_covariables'])))
 
 
 def get_gvars():
@@ -173,7 +173,7 @@ def get_gvars():
     Get the grouping variables
     :return: The list of grouping variables as a comma-separated elements string
     """
-    return re.split(', |,', os.environ['PARAM_grouping'])
+    return list(filter(None, re.split(', |,', os.environ['PARAM_grouping'])))
 
 
 def get_code():
