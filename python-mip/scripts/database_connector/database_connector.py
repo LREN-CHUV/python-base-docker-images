@@ -29,7 +29,10 @@ m = re.search('/*(.*)', parsed_url.path)
 input_db_name = m.group(1)
 input_db_user = os.environ['IN_JDBC_USER']
 input_db_password = os.environ['IN_JDBC_PASSWORD']
-params = json.loads(os.environ['PARAMS'])
+try:
+    params = json.loads(os.environ['PARAMS'])
+except KeyError:
+    params = None
 
 
 # Parse input environment variables for the output DB, also called analytics DB
