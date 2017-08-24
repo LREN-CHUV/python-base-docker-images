@@ -29,6 +29,7 @@ m = re.search('/*(.*)', parsed_url.path)
 input_db_name = m.group(1)
 input_db_user = os.environ['IN_JDBC_USER']
 input_db_password = os.environ['IN_JDBC_PASSWORD']
+params = json.loads(os.environ['PARAMS'])
 
 
 # Parse input environment variables for the output DB, also called analytics DB
@@ -206,3 +207,11 @@ def get_function():
     :return: The function name as a string
     """
     return os.environ['FUNCTION']
+
+
+def get_params():
+    """
+    Get the function parameters
+    :return: The function parameters as a map
+    """
+    return params
