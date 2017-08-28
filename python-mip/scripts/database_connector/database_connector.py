@@ -213,4 +213,4 @@ def get_parameter(p):
     Get the function parameter given in argument
     :return: The parameter value
     """
-    return json.loads(os.environ['PARAM_MODEL_' + p])
+    return os.environ['PARAM_MODEL_' + p]
