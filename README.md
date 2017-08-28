@@ -30,8 +30,9 @@ Other functions are provided like :
 
 * Use `database_connector.get_var()` to get the dependent variable code;
 * Use `database_connector.get_covars()` to get the independent continuous variables codes;
-* Use `database_connector.get_gvars()` to get the independent polynominal variables codes.
-* Use `database_connector.var_type(var)` to get a variable type;
+* Use `database_connector.get_gvars()` to get the independent polynominal variables codes;
+* Use `database_connector.var_type(var)` to get the type of the variable 'var';
+* Use `get_parameter(p)` to get the parameter value of 'p'.
 
 For more information, have a look at the library documentation.
 

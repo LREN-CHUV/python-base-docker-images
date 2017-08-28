@@ -29,10 +29,6 @@ m = re.search('/*(.*)', parsed_url.path)
 input_db_name = m.group(1)
 input_db_user = os.environ['IN_JDBC_USER']
 input_db_password = os.environ['IN_JDBC_PASSWORD']
-try:
-    params = json.loads(os.environ['PARAMS'])
-except KeyError:
-    params = None
 
 
 # Parse input environment variables for the output DB, also called analytics DB
@@ -212,9 +208,9 @@ def get_function():
     return os.environ['FUNCTION']
 
 
-def get_params():
+def get_parameter(p):
     """
-    Get the function parameters
-    :return: The function parameters as a map
+    Get the function parameter given in argument
+    :return: The parameter value
     """
-    return params
+    return json.loads(os.environ['PARAM_MODEL_' + p])
