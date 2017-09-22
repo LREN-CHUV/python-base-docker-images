@@ -7,8 +7,8 @@ LABEL eu.humanbrainproject.category=Python
 ENV COMPUTE_IN=/data/in \
     COMPUTE_OUT=/data/out
 
-COPY scripts/database_connector/database_connector.py /
-COPY scripts/database_connector/requirements.txt /
+COPY scripts/io_helper/io_helper.py /
+COPY scripts/io_helper/requirements.txt /
 COPY scripts/docker-entrypoint.sh /
 
 RUN conda install --yes --file /requirements.txt
