@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
-import psycopg2
+import sqlalchemy
+import pandas
 import os
 import datetime
 import re
@@ -11,7 +12,7 @@ from urllib.parse import urlparse
 
 '''
 ************************************************************************************************************************
-Initialisation
+Initialization
 ************************************************************************************************************************
 '''
 
@@ -19,198 +20,108 @@ Initialisation
 logging.basicConfig(level=logging.INFO)
 
 
-# Parse input environment variables for the input DB
-postgresql_url = urlparse(os.environ['IN_JDBC_URL']).path
-parsed_url = urlparse(postgresql_url)
-m = re.search('(.*):([0-9]*)', parsed_url.netloc)
-input_db_host = m.group(1)
-input_db_port = m.group(2)
-m = re.search('/*(.*)', parsed_url.path)
-input_db_name = m.group(1)
-input_db_user = os.environ['IN_JDBC_USER']
-input_db_password = os.environ['IN_JDBC_PASSWORD']
+# Get input DB information
+parsed_in_jdbc_url = urlparse(urlparse(os.environ['IN_JDBC_URL']).path)
+in_jdbc_url = parsed_in_jdbc_url.scheme + \
+              "://" + os.environ['IN_JDBC_USER'] + ":" + os.environ['IN_JDBC_PASSWORD'] + \
+              "@" + parsed_in_jdbc_url.netloc + parsed_in_jdbc_url.path
 
 
-# Parse input environment variables for the output DB, also called analytics DB
-postgresql_url = urlparse(os.environ['OUT_JDBC_URL']).path
-parsed_url = urlparse(postgresql_url)
-m = re.search('(.*):([0-9]*)', parsed_url.netloc)
-analytics_db_host = m.group(1)
-analytics_db_port = m.group(2)
-m = re.search('/*(.*)', parsed_url.path)
-analytics_db_name = m.group(1)
-analytics_db_user = os.environ['OUT_JDBC_USER']
-analytics_db_password = os.environ['OUT_JDBC_PASSWORD']
+# Get output DB information
+parsed_out_jdbc_url = urlparse(urlparse(os.environ['OUT_JDBC_URL']).path)
+out_jdbc_url = parsed_in_jdbc_url.scheme + \
+               "://" + os.environ['OUT_JDBC_USER'] + ":" + os.environ['OUT_JDBC_PASSWORD'] + \
+               "@" + parsed_in_jdbc_url.netloc + parsed_in_jdbc_url.path
 
 
-# Parse metadata environment variable
+# Get variables meta-data
 metadata = json.loads(os.environ['PARAM_meta'])
+
+# Get SQL query
+query = os.environ['PARAM_query']
+
+# Get variables code
+var = os.environ['PARAM_variables']
+covars = list(filter(None, re.split(', |,', os.environ['PARAM_covariables']))) + \
+         list(filter(None, re.split(', |,', os.environ['PARAM_grouping'])))
 
 
 '''
 ************************************************************************************************************************
-Functions read and write databases
+Public functions
 ************************************************************************************************************************
 '''
 
 
 def fetch_data():
     """
-    Fetch data from science-db using the SQL query given through the PARAM_query environment variable
-    :return: A dict containing the columns names 'columns' (see psycopg2 'cursor.description') as a list of strings
-    and a list of tuple 'data' where each list element represents a database row and the tuple elements match the
-    database columns.
+    Get all the needed  algorithm inputs (data, algorithm parameters, etc).
+    The inputs format is described in the README file.
     """
-    conn = psycopg2.connect(host=input_db_host, port=input_db_port, dbname=input_db_name, user=input_db_user,
-                            password=input_db_password)
-    cur = conn.cursor()
-    query = os.environ['PARAM_query']
-    try:
-        cur.execute(query)
-        columns = [d.name for d in cur.description]
-        data = cur.fetchall()
-    except psycopg2.ProgrammingError:
-        logging.warning("Cannot execute the following query on the input DB: %s", query)
-        columns = []
-        data = []
-    conn.close()
-    return {'columns': columns, 'data': data}
+    engine = sqlalchemy.create_engine(in_jdbc_url)
+    df = pandas.read_sql_query(query, engine)
+    raw_data = df.to_dict()
 
+    data = dict()
+    data['dependent'] = [_format_variable(var, raw_data, metadata)]
+    data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
 
-def var_type(var):
-    """
-    Get variable type and available values if it's a nominal one
-    :param var: Variable code as a string
-    :return: A dictionary containing the variable type as a string (key 'type')
-    and the available values as a list of string (key 'values')
-    """
-    try:
-        var_meta = metadata[var]
-    except KeyError:
-        logging.warning("Cannot read meta-data for variable %s !", var)
-        var_meta = {'type': 'unknown', 'enumerations': []}
-    return {
-        'type': var_meta['type'] if 'type' in var_meta else 'unknown',
-        'values': [e['code'] for e in var_meta['enumerations']] if 'enumerations' in var_meta else []
-    }
+    parameters = _get_parameters()
+
+    inputs = {'data': data, 'parameters': parameters}
+
+    return inputs
 
 
 def save_results(pfa, error, shape):
     """
-    Store algorithm results into the analytics-db.
-    :param pfa: PFA formated results
-    :param error: Error
-    :param shape: Result shape. For example pfa_json or pfa_yaml.
+    Store algorithm results in the output DB.
+    :param pfa: PFA formatted results
+    :param error: Error message (if any)
+    :param shape: Result shape. For example: pfa_json.
     """
-    conn = psycopg2.connect(host=analytics_db_host, port=analytics_db_port, dbname=analytics_db_name,
-                            user=analytics_db_user, password=analytics_db_password)
-    cur = conn.cursor()
-    sql = "INSERT INTO job_result VALUES(%s, %s, %s, %s, %s, %s, %s);"
-    data = (os.environ['JOB_ID'], os.environ['NODE'], datetime.datetime.now(), pfa, error, shape,
-            os.environ['FUNCTION'],)
-    cur.execute(sql, data)
-    conn.commit()
-    conn.close()
+    engine = sqlalchemy.create_engine(out_jdbc_url)
+
+    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :date, :pfa, :error, :shape, :function)")
+    engine.execute(sql,
+                   job_id=os.environ['JOB_ID'],
+                   node=os.environ['NODE'],
+                   date=datetime.datetime.now(),
+                   pfa=pfa,
+                   error=error,
+                   shape=shape,
+                   function=os.environ['FUNCTION'])
 
 
 '''
 ************************************************************************************************************************
-Wrapper functions to read environment variables
+Private functions
 ************************************************************************************************************************
 '''
 
 
-def get_job_id():
-    """
-    Get job ID
-    :return: The job ID as a string
-    """
-    return os.environ['JOB_ID']
+def _format_variable(var, raw_data, vars_meta):
+    var_type = _get_type(var, vars_meta)
+    return {'name': var, 'type': var_type, 'series': raw_data[var]}
 
 
-def get_node():
-    """
-    Get data source node
-    :return: The node name as a string
-    """
-    return os.environ['NODE']
+def _get_parameters():
+    param_prefix = "PARAM_MODEL_"
+    parameters = []
+    for env_var in os.environ:
+        if re.fullmatch(param_prefix, env_var):
+            parameters.append({'name': env_var.split(param_prefix)[0], 'value': os.environ[env_var]})
+    return parameters
 
 
-def get_docker_image():
-    """
-    Get Docker image name
-    :return: The Docker image name as a string
-    """
-    return os.environ['DOCKER_IMAGE']
-
-
-def get_query():
-    """
-    Get the SQL auto-generated SQL query to get input data
-    :return: The SQL query as a string
-    """
-    return os.environ['PARAM_query']
-
-
-def get_var():
-    """
-    Get the variable
-    :return: The variable as a string
-    """
-    return os.environ['PARAM_variables']
-
-
-def get_covars():
-    """
-    Get the co-variables
-    :return: The list of co-variables as a comma-separated elements string
-    """
-    return list(filter(None, re.split(', |,', os.environ['PARAM_covariables'])))
-
-
-def get_gvars():
-    """
-    Get the grouping variables
-    :return: The list of grouping variables as a comma-separated elements string
-    """
-    return list(filter(None, re.split(', |,', os.environ['PARAM_grouping'])))
-
-
-def get_code():
-    """
-    Get the algorithm code name
-    :return: The algorithm code name as a string
-    """
-    return os.environ['CODE']
-
-
-def get_name():
-    """
-    Get the algorithm name
-    :return: The algorithm name as a string
-    """
-    return os.environ['NAME']
-
-
-def get_model():
-    """
-    Get the model name i.e. the output type
-    :return: The model name as a string
-    """
-    return os.environ['MODEL']
-
-
-def get_function():
-    """
-    Get the function name
-    :return: The function name as a string
-    """
-    return os.environ['FUNCTION']
-
-
-def get_parameter(p):
-    """
-    Get the function parameter given in argument
-    :return: The parameter value
-    """
-    return os.environ['PARAM_MODEL_' + p]
+def _get_type(var_code, vars_meta):
+    type_info = dict()
+    try:
+        var_meta = vars_meta[var_code]
+        type_info['name'] = var_meta['type'] if 'type' in var_meta else 'unknown'
+        if type_info['name'] in ['polynominal', 'binominal']:
+            type_info['enumeration'] = [e['code'] for e in var_meta['enumerations']]
+    except KeyError:
+        logging.warning("Cannot read meta-data for variable %s !", var_code)
+        type_info['name'] = 'unknown'
+    return type_info
