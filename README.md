@@ -20,10 +20,11 @@ Run: `./build.sh`
 
 ### Integrate a new algorithm
 
-1. Extend a version of hbpmip/python-mip image.
+1. Extend a version of hbpmip/python-mip image;
 2. Add `import io_helper` in your Python script to import the library;
 3. Call `io_helper.fetch_data()` to get the input data (formatted like described below);
-4. Call `io_helper.save_results(pfa, error, shape)` to store the results.
+4. Call `io_helper.save_results(pfa, error, shape)` to store the results;
+5. Ensure that your Dockerfile copies the needed files and sets up a valid entry-point.
 
 
 ## Input format
@@ -85,4 +86,19 @@ Here is a complete example:
     }
   ]
 }
+```
+
+## Dockerfile example
+
+```
+FROM hbpmip/python-mip:1.0.0
+
+MAINTAINER mirco.nasuti@chuv.ch
+
+COPY requirements.txt /requirements.txt
+COPY anova.py /anova.py
+
+RUN conda install -y --file /requirements.txt
+
+ENTRYPOINT ["python", "/anova.py"]
 ```
