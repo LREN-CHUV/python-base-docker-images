@@ -24,7 +24,8 @@ Run: `./build.sh`
 2. Add `import io_helper` in your Python script to import the library;
 3. Call `io_helper.fetch_data()` to get the input data (formatted like described below);
 4. Call `io_helper.save_results(pfa, error, shape)` to store the results;
-5. Ensure that your Dockerfile copies the needed files and sets up a valid entry-point.
+5. Ensure that your Dockerfile copies the needed files, sets up a valid entry-point 
+and sets up a FUNCTION environment variable containing the algorithm name.
 
 
 ## Input format
@@ -91,9 +92,11 @@ Here is a complete example:
 ## Dockerfile example
 
 ```
-FROM hbpmip/python-mip:1.0.0
+FROM hbpmip/python-mip:4950d91
 
 MAINTAINER mirco.nasuti@chuv.ch
+
+ENV FUNCTION python-anova
 
 COPY requirements.txt /requirements.txt
 COPY anova.py /anova.py
