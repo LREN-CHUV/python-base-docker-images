@@ -89,7 +89,7 @@ Here is a complete example:
 ### Dockerfile example
 
 ```
-FROM hbpmip/python-mip:0.1.0
+FROM hbpmip/python-mip:hbpmip/python-mip:0.1.1
 
 MAINTAINER mirco.nasuti@chuv.ch
 
