@@ -23,6 +23,14 @@ if pgrep -lf sshuttle > /dev/null ; then
   exit 1
 fi
 
+if [ $NO_SUDO ]; then
+  CAPTAIN="captain"
+elif groups $USER | grep &>/dev/null '\bdocker\b'; then
+  CAPTAIN="captain"
+else
+  CAPTAIN="sudo captain"
+fi
+
 # Build
 echo "Build the project..."
 ./build.sh
