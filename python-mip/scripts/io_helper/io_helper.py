@@ -29,9 +29,9 @@ in_jdbc_url = parsed_in_jdbc_url.scheme + \
 
 # Get output DB information
 parsed_out_jdbc_url = urlparse(urlparse(os.environ['OUT_JDBC_URL']).path)
-out_jdbc_url = parsed_in_jdbc_url.scheme + \
+out_jdbc_url = parsed_out_jdbc_url.scheme + \
                "://" + os.environ['OUT_JDBC_USER'] + ":" + os.environ['OUT_JDBC_PASSWORD'] + \
-               "@" + parsed_in_jdbc_url.netloc + parsed_in_jdbc_url.path
+               "@" + parsed_out_jdbc_url.netloc + parsed_out_jdbc_url.path
 
 
 # Get variables meta-data
