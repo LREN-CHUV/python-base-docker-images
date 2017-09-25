@@ -1,23 +1,21 @@
 # Python MIP
 
-## Usage (for contributors)
-
-### Build
+## Build (for contributors)
 
 Run: `./build.sh`
 
 
-### Test
+## Test (for contributors)
 
 Run: `./tests/test.sh`
 
 
-### Publish
+## Publish (for contributors)
 
 Run: `./publish.sh`
 
 
-### Integrate a new algorithm
+## Integrate a new algorithm (for end-users)
 
 1. Extend a version of hbpmip/python-mip image (see Dockerfile example below);
 2. Add `import io_helper` in your Python script to import the library;
@@ -27,7 +25,7 @@ Run: `./publish.sh`
 and sets up a _FUNCTION_ environment variable containing the algorithm name (see Dockerfile example below).
 
 
-#### Input format
+### Input format
 
 The `io_helper.fetch_data()` function returns a dictionary.
 
@@ -88,7 +86,7 @@ Here is a complete example:
 }
 ```
 
-#### Dockerfile example
+### Dockerfile example
 
 ```
 FROM hbpmip/python-mip:0.1.0
