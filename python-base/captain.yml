@@ -1,7 +1,7 @@
-python-base:
+target_image:
   build: Dockerfile
   image: hbpmip/python-base
   pre:
-    - echo "Preparing python-base"
+    - echo "Start building python-base"
   post:
     - echo "Finished python-base"
