@@ -60,7 +60,7 @@ def fetch_data():
     """
     engine = sqlalchemy.create_engine(in_jdbc_url)
     df = pandas.read_sql_query(query, engine)
-    raw_data = df.to_dict()
+    raw_data = df.to_dict('list')
 
     data = dict()
     data['dependent'] = [_format_variable(var, raw_data, metadata)]
@@ -100,9 +100,9 @@ Private functions
 '''
 
 
-def _format_variable(var, raw_data, vars_meta):
-    var_type = _get_type(var, vars_meta)
-    return {'name': var, 'type': var_type, 'series': raw_data[var]}
+def _format_variable(var_code, raw_data, vars_meta):
+    var_type = _get_type(var_code, vars_meta)
+    return {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
 
 
 def _get_parameters():
