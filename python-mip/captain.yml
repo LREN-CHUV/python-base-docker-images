@@ -1,7 +1,7 @@
-python-mip:
+target_image:
   build: Dockerfile
   image: hbpmip/python-mip
   pre:
-    - echo "Preparing python-mip"
+    - echo "Start building python-mip"
   post:
     - echo "Finished python-mip"

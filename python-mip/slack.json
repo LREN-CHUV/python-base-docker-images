@@ -1,0 +1,6 @@
+{
+  "channel": "#dev-activity",
+  "username": "webhookbot",
+  "text": "USER pushed a new version of hbpmip/python-mip:VERSION to Docker Hub",
+  "icon_emoji": ":whale:"
+}
