@@ -107,10 +107,11 @@ def _format_variable(var_code, raw_data, vars_meta):
 
 def _get_parameters():
     param_prefix = "PARAM_MODEL_"
+    research_pattern = param_prefix + ".*"
     parameters = []
     for env_var in os.environ:
-        if re.fullmatch(param_prefix, env_var):
-            parameters.append({'name': env_var.split(param_prefix)[0], 'value': os.environ[env_var]})
+        if re.fullmatch(research_pattern, env_var):
+            parameters.append({'name': env_var.split(param_prefix)[1], 'value': os.environ[env_var]})
     return parameters
 
 
