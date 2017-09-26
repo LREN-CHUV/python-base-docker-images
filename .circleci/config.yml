@@ -28,7 +28,7 @@ jobs:
       - run:
           name: "Test python-base"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-base/test.sh
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-base/tests/test.sh
       - run:
           name: "Build python-mip"
           command: |
