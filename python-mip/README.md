@@ -97,7 +97,7 @@ Here is a complete example:
 ### Dockerfile example
 
 ```
-FROM hbpmip/python-mip:hbpmip/python-mip:hbpmip/python-mip:hbpmip/python-mip:0.1.3
+FROM hbpmip/python-mip:0.1.3
 
 MAINTAINER mirco.nasuti@chuv.ch
 
@@ -110,3 +110,11 @@ RUN conda install -y --file /requirements.txt
 
 ENTRYPOINT ["python", "/anova.py"]
 ```
+
+
+## TODO (for contributors)
+
+Here is a list of future improvements:
+
+* Extract the scripts in a proper library sub-project, publish it on PyPI and install it properly in the python-mip image
+* Provide separate images for the building (based on Debian and including tools like conda) and for the distribution (based on Alpine and including a minimal Python environment).
