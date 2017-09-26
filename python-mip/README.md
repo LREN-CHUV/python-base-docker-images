@@ -1,5 +1,5 @@
-[![DockerHub](https://img.shields.io/badge/docker-hbpmip%2Fpython--mip-008bb8.svg)](https://hub.docker.com/r/hbpmip/python-mip/) 
-[![ImageVersion](https://images.microbadger.com/badges/version/hbpmip/python-mip.svg)](https://hub.docker.com/r/hbpmip/python-mip/tags "hbpmip/python-mip image tags") 
+[![DockerHub](https://img.shields.io/badge/docker-hbpmip%2Fpython--mip-008bb8.svg)](https://hub.docker.com/r/hbpmip/python-mip/)
+[![ImageVersion](https://images.microbadger.com/badges/version/hbpmip/python-mip.svg)](https://hub.docker.com/r/hbpmip/python-mip/tags "hbpmip/python-mip image tags")
 [![ImageLayers](https://images.microbadger.com/badges/image/hbpmip/python-mip.svg)](https://microbadger.com/#/images/hbpmip/python-mip "hbpmip/python-mip on microbadger")
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/c79a2a2f29ae43a8b8e660b275f98f23)](https://www.codacy.com/app/lren-chuv/python-base-docker-images?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LREN-CHUV/python-base-docker-images&amp;utm_campaign=Badge_Grade)
 
@@ -29,7 +29,7 @@ Run: `./publish.sh`
 2. Add `import io_helper` in your Python script to import the library;
 3. Call `io_helper.fetch_data()` to get the input data (formatted like described below);
 4. Call `io_helper.save_results(pfa, error, shape)` to store the results;
-5. Ensure that your Dockerfile copies the needed files, sets up a valid entry-point 
+5. Ensure that your Dockerfile copies the needed files, sets up a valid entry-point
 and sets up a _FUNCTION_ environment variable containing the algorithm name (see Dockerfile example below).
 
 
