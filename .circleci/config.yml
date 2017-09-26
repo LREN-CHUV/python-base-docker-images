@@ -1,0 +1,39 @@
+---
+
+version: 2
+jobs:
+  build:
+    working_directory: ~/src
+    docker:
+      - image: hbpmip/docker-compose-for-ci:17.06-0
+    environment:
+       - CIRCLECI: true
+    steps:
+      - setup_remote_docker:
+          version: 17.06.0-ce
+      - checkout
+      - run:
+          name: "Install requirements"
+          command: |
+            docker --version
+            pre-commit install
+      - run:
+          name: "Validate code quality"
+          command: |
+            pre-commit run --all-files
+      - run:
+          name: "Build python-base"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-base/build.sh
+      - run:
+          name: "Test python-base"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-base/test.sh
+      - run:
+          name: "Build python-mip"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/build.sh
+      - run:
+          name: "Test python-mip"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/tests/test.sh
