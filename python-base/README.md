@@ -6,6 +6,13 @@
 
 This is a base image for Python.
 
+## Usage
+
+Dockerfile
+```
+  FROM hbpmip/python-base:0.2.0
+
+```
 
 ## Build
 
