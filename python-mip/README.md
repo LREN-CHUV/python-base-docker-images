@@ -117,3 +117,4 @@ Here is a list of future improvements:
 
 * Extract the scripts in a proper library sub-project, publish it on PyPI and install it properly in the python-mip image
 * Provide separate images for the building (based on Debian and including tools like conda) and for the distribution (based on Alpine and including a minimal Python environment).
+* Add some tests

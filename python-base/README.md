@@ -27,3 +27,9 @@ Run: `./tests/test.sh`
 ## Publish
 
 Run: `./publish.sh`
+
+
+## TODO
+
+* Provide separate images for the building (based on Debian and including tools like conda) and for the distribution (based on Alpine and including a minimal Python environment).
+* Add some tests
