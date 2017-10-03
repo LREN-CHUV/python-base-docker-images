@@ -1,4 +1,4 @@
-FROM hbpmip/python-base:0.2.0
+FROM hbpmip/python-base:5bd552d
 
 MAINTAINER mirco.nasuti@chuv.ch
 
@@ -15,15 +15,10 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.docker.dockerfile="Dockerfile" \
       org.label-schema.schema-version="1.0"
 
-ENV COMPUTE_IN=/data/in \
-    COMPUTE_OUT=/data/out
+COPY requirements.txt /
+COPY docker-entrypoint.sh /
 
-COPY scripts/io_helper/io_helper.py /
-COPY scripts/io_helper/requirements.txt /
-COPY scripts/docker-entrypoint.sh /
-
-RUN conda install --yes --file /requirements.txt
-RUN conda update --yes --file /requirements.txt
+RUN pip install -r /requirements.txt
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["compute"]

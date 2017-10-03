@@ -1,10 +1,10 @@
-FROM python:3.6.2-slim
+FROM continuumio/miniconda3:4.3.27
 
 MAINTAINER mirco.nasuti@chuv.ch
 
 LABEL org.label-schema.build-date=$BUILD_DATE \
-      org.label-schema.name="hbpmip/python-base" \
-      org.label-schema.description="Minimal Python image" \
+      org.label-schema.name="hbpmip/python-base-build" \
+      org.label-schema.description="Base Python image including Conda" \
       org.label-schema.url="https://github.com/LREN-CHUV/python-base-docker-images" \
       org.label-schema.vcs-type="git" \
       org.label-schema.vcs-url="https://github.com/LREN-CHUV/python-base-docker-images.git" \

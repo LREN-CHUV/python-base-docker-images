@@ -4,15 +4,15 @@
 
 # Python Base
 
-This is a base image for Python.
+This is a minimal base image for Python.
 
 ## Usage
 
 Dockerfile
 ```
   FROM hbpmip/python-base:0.2.0
-
 ```
+
 
 ## Build
 
@@ -31,5 +31,4 @@ Run: `./publish.sh`
 
 ## TODO
 
-* Provide separate images for the building (based on Debian and including tools like conda) and for the distribution (based on Alpine and including a minimal Python environment).
 * Add some tests

@@ -1,0 +1,7 @@
+target_image:
+  build: Dockerfile
+  image: hbpmip/python-base-build
+  pre:
+    - echo "Start building python-base-build"
+  post:
+    - echo "Finished python-base-build"

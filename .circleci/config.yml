@@ -30,6 +30,14 @@ jobs:
           command: |
             PATH=$PATH:/$HOME/.captain/bin/ ./python-base/tests/test.sh
       - run:
+          name: "Build python-base-build"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-base-build/build.sh
+      - run:
+          name: "Test python-base-build"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-base-build/tests/test.sh
+      - run:
           name: "Build python-mip"
           command: |
             PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/build.sh
