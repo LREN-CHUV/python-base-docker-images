@@ -10,7 +10,7 @@ This is a minimal base image for Python.
 
 Dockerfile
 ```
-  FROM hbpmip/python-base:0.2.0
+  FROM hbpmip/python-base:hbpmip/python-base:0.3.0
 ```
 
 
