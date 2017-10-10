@@ -5,3 +5,5 @@ target_image:
     - echo "Start building python-base-build"
   post:
     - echo "Finished python-base-build"
+  test:
+    - ./tests/test.sh

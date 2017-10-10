@@ -5,3 +5,5 @@ target_image:
     - echo "Start building python-mip"
   post:
     - echo "Finished python-mip"
+  test:
+    - ./tests/test.sh
