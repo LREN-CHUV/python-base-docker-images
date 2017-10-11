@@ -122,26 +122,31 @@ def _get_input_jdbc_url():
 
 
 def _get_output_jdbc_url():
+    output_jdbc_url = None
+    raw_url = None
+    user = None
+    passwd = None
     try:
         raw_url = os.environ['OUT_JDBC_URL']
     except KeyError:
         logging.warning("Cannot read input JDBC URL from environment variable OUT_JDBC_URL")
-        raw_url = ""
     try:
         user = os.environ['OUT_JDBC_USER']
     except KeyError:
         logging.warning("Cannot read input JDBC user from environment variable OUT_JDBC_USER")
-        user = ""
     try:
         passwd = os.environ['OUT_JDBC_PASSWORD']
     except KeyError:
         logging.warning("Cannot read input JDBC password from environment variable OUT_JDBC_PASSWORD")
-        passwd = ""
-    parsed_in_jdbc_url = urlparse(urlparse(raw_url).path)
-    scheme = parsed_in_jdbc_url.scheme
-    netloc = parsed_in_jdbc_url.netloc
-    path = parsed_in_jdbc_url.path
-    return scheme + "://" + user + ":" + passwd + "@" + netloc + path
+
+    if raw_url and user and passwd:
+        parsed_in_jdbc_url = urlparse(urlparse(raw_url).path)
+        scheme = parsed_in_jdbc_url.scheme
+        netloc = parsed_in_jdbc_url.netloc
+        path = parsed_in_jdbc_url.path
+        output_jdbc_url = scheme + "://" + user + ":" + passwd + "@" + netloc + path
+
+    return output_jdbc_url
 
 
 def _get_metadata():
