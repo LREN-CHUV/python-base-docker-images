@@ -18,32 +18,6 @@ from urllib.parse import urlparse
 logging.basicConfig(level=logging.INFO)
 
 
-# Get input DB information
-parsed_in_jdbc_url = urlparse(urlparse(os.environ['IN_JDBC_URL']).path)
-in_jdbc_url = parsed_in_jdbc_url.scheme + \
-              "://" + os.environ['IN_JDBC_USER'] + ":" + os.environ['IN_JDBC_PASSWORD'] + \
-              "@" + parsed_in_jdbc_url.netloc + parsed_in_jdbc_url.path
-
-
-# Get output DB information
-parsed_out_jdbc_url = urlparse(urlparse(os.environ['OUT_JDBC_URL']).path)
-out_jdbc_url = parsed_out_jdbc_url.scheme + \
-               "://" + os.environ['OUT_JDBC_USER'] + ":" + os.environ['OUT_JDBC_PASSWORD'] + \
-               "@" + parsed_out_jdbc_url.netloc + parsed_out_jdbc_url.path
-
-
-# Get variables meta-data
-metadata = json.loads(os.environ['PARAM_meta'])
-
-# Get SQL query
-query = os.environ['PARAM_query']
-
-# Get variables code
-var = os.environ['PARAM_variables']
-covars = list(filter(None, re.split(', |,', os.environ['PARAM_covariables']))) + \
-         list(filter(None, re.split(', |,', os.environ['PARAM_grouping'])))
-
-
 # *********************************************************************************************************************
 # Public functions
 # *********************************************************************************************************************
@@ -53,9 +27,13 @@ def fetch_data():
     Get all the needed  algorithm inputs (data, algorithm parameters, etc).
     The inputs format is described in the README file.
     """
-    engine = sqlalchemy.create_engine(in_jdbc_url)
-    df = pandas.read_sql_query(query, engine)
+    engine = sqlalchemy.create_engine(_get_input_jdbc_url())
+    df = pandas.read_sql_query(_get_query(), engine)
     raw_data = df.to_dict('list')
+
+    var = _get_var()
+    covars = _get_covars()
+    metadata = _get_metadata()
 
     data = dict()
     data['dependent'] = [_format_variable(var, raw_data, metadata)]
@@ -75,17 +53,17 @@ def save_results(pfa, error, shape):
     :param error: Error message (if any)
     :param shape: Result shape. For example: pfa_json.
     """
-    engine = sqlalchemy.create_engine(out_jdbc_url)
+    engine = sqlalchemy.create_engine(_get_output_jdbc_url())
 
     sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :date, :pfa, :error, :shape, :function)")
     engine.execute(sql,
-                   job_id=os.environ['JOB_ID'],
-                   node=os.environ['NODE'],
+                   job_id=_get_job_id(),
+                   node=_get_node(),
                    date=datetime.datetime.now(),
                    pfa=pfa,
                    error=error,
                    shape=shape,
-                   function=os.environ['FUNCTION'])
+                   function=_get_function())
 
 
 # *********************************************************************************************************************
@@ -118,3 +96,103 @@ def _get_type(var_code, vars_meta):
         logging.warning("Cannot read meta-data for variable %s !", var_code)
         type_info['name'] = 'unknown'
     return type_info
+
+
+def _get_input_jdbc_url():
+    try:
+        raw_url = os.environ['IN_JDBC_URL']
+    except KeyError:
+        logging.warning("Cannot read input JDBC URL from environment variable IN_JDBC_URL")
+        raw_url = ""
+    try:
+        user = os.environ['IN_JDBC_USER']
+    except KeyError:
+        logging.warning("Cannot read input JDBC user from environment variable IN_JDBC_USER")
+        user = ""
+    try:
+        passwd = os.environ['IN_JDBC_PASSWORD']
+    except KeyError:
+        logging.warning("Cannot read input JDBC password from environment variable IN_JDBC_PASSWORD")
+        passwd = ""
+    parsed_in_jdbc_url = urlparse(urlparse(raw_url).path)
+    scheme = parsed_in_jdbc_url.scheme
+    netloc = parsed_in_jdbc_url.netloc
+    path = parsed_in_jdbc_url.path
+    return scheme + "://" + user + ":" + passwd + "@" + netloc + path
+
+
+def _get_output_jdbc_url():
+    try:
+        raw_url = os.environ['OUT_JDBC_URL']
+    except KeyError:
+        logging.warning("Cannot read input JDBC URL from environment variable OUT_JDBC_URL")
+        raw_url = ""
+    try:
+        user = os.environ['OUT_JDBC_USER']
+    except KeyError:
+        logging.warning("Cannot read input JDBC user from environment variable OUT_JDBC_USER")
+        user = ""
+    try:
+        passwd = os.environ['OUT_JDBC_PASSWORD']
+    except KeyError:
+        logging.warning("Cannot read input JDBC password from environment variable OUT_JDBC_PASSWORD")
+        passwd = ""
+    parsed_in_jdbc_url = urlparse(urlparse(raw_url).path)
+    scheme = parsed_in_jdbc_url.scheme
+    netloc = parsed_in_jdbc_url.netloc
+    path = parsed_in_jdbc_url.path
+    return scheme + "://" + user + ":" + passwd + "@" + netloc + path
+
+
+def _get_metadata():
+    try:
+        return json.loads(os.environ['PARAM_meta'])
+    except KeyError:
+        logging.warning("Cannot read metadata from environment variable PARAM_meta")
+
+
+def _get_query():
+    try:
+        return os.environ['PARAM_query']
+    except KeyError:
+        logging.warning("Cannot read SQL query from environment variable PARAM_query")
+
+
+def _get_var():
+    try:
+        return os.environ['PARAM_variables']
+    except KeyError:
+        logging.warning("Cannot read dependent variables from environment variable PARAM_variables")
+
+
+def _get_covars():
+    try:
+        covars = os.environ['PARAM_covariables']
+    except KeyError:
+        covars = ""
+    try:
+        gvars = os.environ['PARAM_grouping']
+    except KeyError:
+        gvars = ""
+    return list(filter(None, re.split(', |,', covars))) + list(filter(None, re.split(', |,', gvars)))
+
+
+def _get_job_id():
+    try:
+        return os.environ['JOB_ID']
+    except KeyError:
+        logging.warning("Cannot read job ID from environment variable JOB_ID")
+
+
+def _get_node():
+    try:
+        return os.environ['NODE']
+    except KeyError:
+        logging.warning("Cannot read node from environment variable NODE")
+
+
+def _get_function():
+    try:
+        return os.environ['FUNCTION']
+    except KeyError:
+        logging.warning("Cannot read function from environment variable FUNCTION")
