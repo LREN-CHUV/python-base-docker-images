@@ -27,8 +27,3 @@ Run: `./tests/test.sh`
 ## Publish
 
 Run: `./publish.sh`
-
-
-## TODO
-
-* Add some tests
