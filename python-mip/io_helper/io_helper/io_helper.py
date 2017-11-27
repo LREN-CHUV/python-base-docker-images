@@ -8,6 +8,7 @@ import datetime
 import re
 import json
 from urllib.parse import urlparse
+from sqlalchemy.exc import ProgrammingError
 
 
 # *********************************************************************************************************************
@@ -28,16 +29,20 @@ def fetch_data():
     The inputs format is described in the README file.
     """
     engine = sqlalchemy.create_engine(_get_input_jdbc_url())
-    df = pandas.read_sql_query(_get_query(), engine)
-    raw_data = df.to_dict('list')
 
+    data = dict()
     var = _get_var()
     covars = _get_covars()
     metadata = _get_metadata()
 
-    data = dict()
-    data['dependent'] = [_format_variable(var, raw_data, metadata)]
-    data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
+    try:
+        df = pandas.read_sql_query(_get_query(), engine)
+        raw_data = df.to_dict('list')
+        data['dependent'] = [_format_variable(var, raw_data, metadata)]
+        data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
+    except ProgrammingError as ex:
+        logging.warning("A problem occurred while querying the database, "
+                        "please ensure all the variables are available in the database: " + str(ex))
 
     parameters = _get_parameters()
 
