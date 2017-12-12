@@ -26,3 +26,9 @@ Python algorithms can be built using this image !
 Python 3.x image based on python-base and providing extra libraries like pandas and
 a library to read/write MIP algorithms inputs/outputs.
 Python algorithms should be distributed as children images of this one.
+
+# Acknowledgements
+
+This work has been funded by the European Union Seventh Framework Program (FP7/2007­2013) under grant agreement no. 604102 (HBP)
+
+This work is part of SP8 of the Human Brain Project (SGA1).
