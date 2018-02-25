@@ -4,7 +4,7 @@ from setuptools import config
 conf_dict = config.read_configuration('setup.cfg')
 
 setup(
-    name='io_helper',
+    name='mip_helper',
     version=conf_dict['metadata']['version'],
     zip_safe=False,
     url='https://github.com/LREN-CHUV/python-base-docker-images',
@@ -13,7 +13,7 @@ setup(
     author='Mirco Nasuti',
     author_email='mirco.nasuti@chuv.ch',
     license='Apache 2.0',
-    packages=['io_helper'],
+    packages=['mip_helper'],
     extras_require={
         'test': ['unittest', 'nose'],
     },

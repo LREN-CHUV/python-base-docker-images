@@ -28,7 +28,7 @@ def fetch_data():
     Get all the needed  algorithm inputs (data, algorithm parameters, etc).
     The inputs format is described in the README file.
     """
-    engine = sqlalchemy.create_engine(_get_input_jdbc_url())
+    engine = sqlalchemy.create_engine(_get_input_db_url())
 
     data = dict()
     var = _get_var()
@@ -58,7 +58,7 @@ def save_results(pfa, error, shape):
     :param error: Error message (if any)
     :param shape: Result shape. For example: pfa_json.
     """
-    engine = sqlalchemy.create_engine(_get_output_jdbc_url())
+    engine = sqlalchemy.create_engine(_get_output_db_url())
 
     sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :date, :pfa, :error, :shape, :function)")
     engine.execute(sql,
@@ -81,7 +81,7 @@ def _format_variable(var_code, raw_data, vars_meta):
 
 
 def _get_parameters():
-    param_prefix = "PARAM_MODEL_"
+    param_prefix = "MODEL_PARAM_"
     research_pattern = param_prefix + ".*"
     parameters = []
     for env_var in os.environ:
@@ -103,60 +103,100 @@ def _get_type(var_code, vars_meta):
     return type_info
 
 
-def _get_input_jdbc_url():
-    input_jdbc_url = None
-    raw_url = None
+def _get_input_db_url():
+    dbapi = None
+    host = None
+    port = None
+    database = None
     user = None
     passwd = None
     try:
-        raw_url = os.environ['IN_JDBC_URL']
+        dbapi = os.environ['IN_DBAPI']
     except KeyError:
-        logging.warning("Cannot read input JDBC URL from environment variable IN_JDBC_URL")
+        logging.warning("Cannot read input DBAPI from environment variable IN_DBAPI")
+        raise
+
     try:
-        user = os.environ['IN_JDBC_USER']
+        host = os.environ['IN_HOST']
     except KeyError:
-        logging.warning("Cannot read input JDBC user from environment variable IN_JDBC_USER")
+        logging.warning("Cannot read host for input database from environment variable IN_HOST")
+        raise
+
     try:
-        passwd = os.environ['IN_JDBC_PASSWORD']
+        port = os.environ['IN_PORT']
     except KeyError:
-        logging.warning("Cannot read input JDBC password from environment variable IN_JDBC_PASSWORD")
+        logging.warning("Cannot read port for input database from environment variable IN_PORT")
+        raise
 
-    if raw_url and user and passwd:
-        parsed_in_jdbc_url = urlparse(urlparse(raw_url).path)
-        scheme = parsed_in_jdbc_url.scheme
-        netloc = parsed_in_jdbc_url.netloc
-        path = parsed_in_jdbc_url.path
-        input_jdbc_url = scheme + "://" + user + ":" + passwd + "@" + netloc + path
+    try:
+        database = os.environ['IN_DATABASE']
+    except KeyError:
+        logging.warning("Cannot read name of input database from environment variable IN_DATABASE")
+        raise
 
-    return input_jdbc_url
+    try:
+        user = os.environ['IN_USER']
+    except KeyError:
+        logging.warning("Cannot read input database user from environment variable IN_USER")
+        raise
+
+    try:
+        passwd = os.environ['IN_PASSWORD']
+    except KeyError:
+        logging.warning("Cannot read input database password from environment variable IN_PASSWORD")
+        raise
+
+    input_db_url = dbapi + "://" + user + ":" + passwd + "@" + host + ":" + port + "/" + database
+
+    return input_db_url
 
 
-def _get_output_jdbc_url():
-    output_jdbc_url = None
-    raw_url = None
+def _get_output_db_url():
+    dbapi = None
+    host = None
+    port = None
+    database = None
     user = None
     passwd = None
     try:
-        raw_url = os.environ['OUT_JDBC_URL']
+        dbapi = os.environ['OUT_DBAPI']
     except KeyError:
-        logging.warning("Cannot read input JDBC URL from environment variable OUT_JDBC_URL")
-    try:
-        user = os.environ['OUT_JDBC_USER']
-    except KeyError:
-        logging.warning("Cannot read input JDBC user from environment variable OUT_JDBC_USER")
-    try:
-        passwd = os.environ['OUT_JDBC_PASSWORD']
-    except KeyError:
-        logging.warning("Cannot read input JDBC password from environment variable OUT_JDBC_PASSWORD")
+        logging.warning("Cannot read output DBAPI from environment variable OUT_DBAPI")
+        raise
 
-    if raw_url and user and passwd:
-        parsed_in_jdbc_url = urlparse(urlparse(raw_url).path)
-        scheme = parsed_in_jdbc_url.scheme
-        netloc = parsed_in_jdbc_url.netloc
-        path = parsed_in_jdbc_url.path
-        output_jdbc_url = scheme + "://" + user + ":" + passwd + "@" + netloc + path
+    try:
+        host = os.environ['OUT_HOST']
+    except KeyError:
+        logging.warning("Cannot read host for output database from environment variable OUT_HOST")
+        raise
 
-    return output_jdbc_url
+    try:
+        port = os.environ['OUT_PORT']
+    except KeyError:
+        logging.warning("Cannot read port for output database from environment variable OUT_PORT")
+        raise
+
+    try:
+        database = os.environ['OUT_DATABASE']
+    except KeyError:
+        logging.warning("Cannot read name of output database from environment variable OUT_DATABASE")
+        raise
+
+    try:
+        user = os.environ['OUT_USER']
+    except KeyError:
+        logging.warning("Cannot read output database user from environment variable OUT_USER")
+        raise
+
+    try:
+        passwd = os.environ['OUT_PASSWORD']
+    except KeyError:
+        logging.warning("Cannot read output database password from environment variable OUT_PASSWORD")
+        raise
+
+    output_db_url = dbapi + "://" + user + ":" + passwd + "@" + host + ":" + port + "/" + database
+
+    return output_db_url
 
 
 def _get_metadata():
