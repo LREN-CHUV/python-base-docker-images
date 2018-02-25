@@ -25,16 +25,16 @@ Run: `./publish.sh`
 ## Integrate a new algorithm (for end-users)
 
 1. Extend a version of hbpmip/python-mip image (see Dockerfile example below);
-2. Add `from io_helper import io_helper` in your Python script to import the library;
-3. Call `io_helper.fetch_data()` to get the input data (formatted like described below);
-4. Call `io_helper.save_results(pfa, error, shape)` to store the results;
+2. Add `from mip_helper import mip_helper` in your Python script to import the library;
+3. Call `mip_helper.fetch_data()` to get the input data (formatted like described below);
+4. Call `mip_helper.save_results(pfa, error, shape)` to store the results;
 5. Ensure that your Dockerfile copies the needed files, sets up a valid entry-point
 and sets up a _FUNCTION_ environment variable containing the algorithm name (see Dockerfile example below).
 
 
 ### Input format
 
-The `io_helper.fetch_data()` function returns a dictionary.
+The `mip_helper.fetch_data()` function returns a dictionary.
 
 Here is a complete example:
 
