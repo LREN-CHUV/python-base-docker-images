@@ -7,8 +7,11 @@ class Shapes:
       ERROR = "text/plain+error"
       PFA = "application/pfa+json"
       PFA_YAML = "application/pfa+yaml"
-      """ Tabular data resource """
-      TABULAR_DATA_RESOURCE = "application/vnd.tabular-data-resource+json"
+      """
+        Tabular data resource
+        See: https://frictionlessdata.io/specs/tabular-data-resource/
+      """
+      TABULAR_DATA_RESOURCE = "application/vnd.dataresource+json"
       HTML = "text/html"
       SVG = "image/svg+xml"
       PNG = "image/png;base64"
