@@ -108,7 +108,13 @@ def get_results():
 
 def _format_variable(var_code, raw_data, vars_meta):
     var_type = _get_type(var_code, vars_meta)
-    return {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
+    var = {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
+    var_meta = vars_meta[var_code]
+    if var['type'] == 'real':
+        for stat in ['mean', 'std', 'min', 'max']:
+            if stat in var_meta:
+                var[stat] = var_meta[stat]
+    return var
 
 
 def _get_parameters():
