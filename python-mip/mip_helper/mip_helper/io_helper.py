@@ -7,7 +7,6 @@ import os
 import datetime
 import re
 import json
-from urllib.parse import urlparse
 from sqlalchemy.exc import ProgrammingError
 
 
@@ -104,16 +103,10 @@ def _get_type(var_code, vars_meta):
 
 
 def _get_input_db_url():
-    dbapi = None
-    host = None
-    port = None
-    database = None
-    user = None
-    passwd = None
     try:
-        dbapi = os.environ['IN_DBAPI']
+        dbapi = os.environ['IN_DBAPI_DRIVER']
     except KeyError:
-        logging.warning("Cannot read input DBAPI from environment variable IN_DBAPI")
+        logging.warning("Cannot read input DBAPI from environment variable IN_DBAPI_DRIVER")
         raise
 
     try:
@@ -152,12 +145,6 @@ def _get_input_db_url():
 
 
 def _get_output_db_url():
-    dbapi = None
-    host = None
-    port = None
-    database = None
-    user = None
-    passwd = None
     try:
         dbapi = os.environ['OUT_DBAPI']
     except KeyError:
