@@ -1,5 +1,5 @@
 MIP\_Helper
-==========
+===========
 
 This is a Python library used in the hbpmip/python-mip Docker image in
 order to ease developers job. It provides functions to read and write
