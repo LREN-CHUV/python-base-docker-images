@@ -146,9 +146,9 @@ def _get_input_db_url():
 
 def _get_output_db_url():
     try:
-        dbapi = os.environ['OUT_DBAPI']
+        dbapi = os.environ['OUT_DBAPI_DRIVER']
     except KeyError:
-        logging.warning("Cannot read output DBAPI from environment variable OUT_DBAPI")
+        logging.warning("Cannot read output DBAPI from environment variable OUT_DBAPI_DRIVER")
         raise
 
     try:
