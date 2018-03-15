@@ -19,7 +19,7 @@ setup(
     },
     install_requires=['psycopg2>=2.7.3.1',
                       'sqlalchemy>=1.1.14',
-                      'pandas>=0.20.3'],
+                      'pandas==0.22.0'],
     include_package_data=True,
     classifiers=(
         'Intended Audience :: Developers',
