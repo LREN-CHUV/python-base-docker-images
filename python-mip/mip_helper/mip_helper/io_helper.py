@@ -9,6 +9,8 @@ import re
 import json
 from sqlalchemy.exc import ProgrammingError
 
+from .models import JobResult
+
 
 # *********************************************************************************************************************
 # Initialization
@@ -16,6 +18,9 @@ from sqlalchemy.exc import ProgrammingError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
+
+# Init sessionmaker
+Session = sqlalchemy.orm.sessionmaker()
 
 
 # *********************************************************************************************************************
@@ -52,22 +57,48 @@ def fetch_data():
 
 def save_results(pfa, error, shape):
     """
-    Store algorithm results in the output DB.
+    Store algorithm results in the output DB. Update results if it already exists.
     :param pfa: PFA formatted results
     :param error: Error message (if any)
     :param shape: Result shape. For example: pfa_json.
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
-    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :date, :pfa, :error, :shape, :function)")
+    # TODO: only temporary solution, final one will not be updating existing results
+    query = """
+    INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)
+    ON CONFLICT (job_id, node) DO UPDATE
+      SET timestamp = :timestamp,
+          data = :data,
+          error = :error,
+          shape = :shape,
+          function = :function;
+    """
+    sql = sqlalchemy.text(query)
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
-                   date=datetime.datetime.now(),
-                   pfa=pfa,
+                   # TODO: shouldn't this rather be utcnow()?
+                   timestamp=datetime.datetime.now(),
+                   data=pfa,
                    error=error,
                    shape=shape,
                    function=_get_function())
+
+
+def get_results():
+    """
+    Return job result as a dictionary if exists. Return None if it does not exist.
+    :param job_id: Job ID
+    """
+    engine = sqlalchemy.create_engine(_get_output_db_url())
+    Session.configure(bind=engine)
+
+    session = Session()
+    job_result = session.query(JobResult).filter_by(job_id=_get_job_id(), node=_get_node()).first()
+    session.close()
+
+    return job_result
 
 
 # *********************************************************************************************************************
@@ -76,7 +107,13 @@ def save_results(pfa, error, shape):
 
 def _format_variable(var_code, raw_data, vars_meta):
     var_type = _get_type(var_code, vars_meta)
-    return {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
+    var = {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
+    var_meta = vars_meta[var_code]
+    if var['type'] == 'real':
+        for stat in ['mean', 'std', 'min', 'max']:
+            if stat in var_meta:
+                var[stat] = var_meta[stat]
+    return var
 
 
 def _get_parameters():
