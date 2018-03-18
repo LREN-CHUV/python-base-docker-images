@@ -80,6 +80,7 @@ def get_results(job_id=None, node=None):
     Return job result as a dictionary if exists. Return None if it does not exist.
     :param job_id: Job ID
     """
+    assert isinstance(job_id, str)
     engine = sqlalchemy.create_engine(_get_output_db_url())
     Session.configure(bind=engine)
 
