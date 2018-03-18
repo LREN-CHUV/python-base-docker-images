@@ -10,3 +10,5 @@ do
   echo "Try again to login on PyPI and release this library..."
   read -p "Press Enter to continue > "
 done
+
+echo "Now update the file ../requirements.txt"
