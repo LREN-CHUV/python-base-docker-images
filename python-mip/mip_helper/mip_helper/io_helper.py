@@ -144,7 +144,7 @@ def _get_input_db_url():
         dbapi = os.environ['IN_DBAPI_DRIVER']
     except KeyError:
         logging.warning("Cannot read input DBAPI from environment variable IN_DBAPI_DRIVER")
-        raise
+        dbapi = "postgresql"
 
     try:
         host = os.environ['IN_HOST']
@@ -186,7 +186,7 @@ def _get_output_db_url():
         dbapi = os.environ['OUT_DBAPI_DRIVER']
     except KeyError:
         logging.warning("Cannot read output DBAPI from environment variable OUT_DBAPI_DRIVER")
-        raise
+        dbapi = "postgresql"
 
     try:
         host = os.environ['OUT_HOST']
