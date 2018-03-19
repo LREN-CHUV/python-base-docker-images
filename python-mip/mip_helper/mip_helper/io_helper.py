@@ -64,15 +64,8 @@ def save_results(pfa, error, shape):
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
-    # TODO: only temporary solution, final one will not be updating existing results
     query = """
-    INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)
-    ON CONFLICT (job_id, node) DO UPDATE
-      SET timestamp = :timestamp,
-          data = :data,
-          error = :error,
-          shape = :shape,
-          function = :function;
+      INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)
     """
     sql = sqlalchemy.text(query)
     engine.execute(sql,

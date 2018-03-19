@@ -2,6 +2,10 @@ FROM hbpmip/python-base:0.3.0
 
 MAINTAINER mirco.nasuti@chuv.ch
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="hbpmip/python-mip" \
       org.label-schema.description="Execute Python algorithms in MIP Woken environment" \
@@ -11,7 +15,7 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.version="$VERSION" \
       org.label-schema.vendor="LREN CHUV" \
-      org.label-schema.license="AGPLv3" \
+      org.label-schema.license="Apache2.0" \
       org.label-schema.docker.dockerfile="Dockerfile" \
       org.label-schema.schema-version="1.0"
 
