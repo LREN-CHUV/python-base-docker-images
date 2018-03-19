@@ -125,7 +125,9 @@ def _get_type(var_code, vars_meta):
         type_info['name'] = var_meta.get('type', 'unknown')
         if type_info['name'] in ['polynominal', 'binominal']:
             type_info['enumeration'] = [e['code'] for e in var_meta['enumerations']]
-
+            # NOTE: enumeration could be a dictionary {'code': <code>, 'label': <label>}, this is only for
+            # backward compatibility
+            type_info['enumeration_labels'] = [e['label'] for e in var_meta['enumerations']]
     except KeyError:
         logging.warning("Cannot read meta-data for variable %s !", var_code)
         type_info['name'] = 'unknown'
