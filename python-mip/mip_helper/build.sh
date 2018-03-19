@@ -11,4 +11,4 @@ fi
 rm -rf dist/*
 
 # Build from setup.py
-python setup.py bdist_wheel
+python3 setup.py bdist_wheel
