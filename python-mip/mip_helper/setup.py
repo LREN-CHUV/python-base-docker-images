@@ -17,8 +17,8 @@ setup(
     extras_require={
         'test': ['unittest', 'nose'],
     },
-    install_requires=['psycopg2>=2.7.3.1',
-                      'sqlalchemy>=1.1.14',
+    install_requires=['psycopg2>=2.7.4',
+                      'sqlalchemy>=1.2.5',
                       'pandas==0.22.0'],
     include_package_data=True,
     classifiers=(
