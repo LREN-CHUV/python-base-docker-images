@@ -96,7 +96,7 @@ Here is a complete example:
 ### Dockerfile example
 
 ```
-FROM hbpmip/python-mip:0.3.0
+FROM hbpmip/python-mip:0.3.1
 
 MAINTAINER mirco.nasuti@chuv.ch
 
