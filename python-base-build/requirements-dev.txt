@@ -2,3 +2,5 @@ pre-commit>=0.13
 nose
 pytest
 wheel
+mock
+ipdb
