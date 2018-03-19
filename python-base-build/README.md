@@ -10,7 +10,7 @@ This is a base image for Python including some building tools.
 
 Dockerfile
 ```
-  FROM hbpmip/python-base-build:hbpmip/python-base-build:0.3.0
+  FROM hbpmip/python-base-build:hbpmip/python-base-build:0.4.0
 ```
 
 
