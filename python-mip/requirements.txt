@@ -1,1 +1,1 @@
-mip_helper==0.3.2
+mip_helper==0.4.0
