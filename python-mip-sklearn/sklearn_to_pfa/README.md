@@ -2,10 +2,6 @@
 
 Python library for converting scikit-learn models to PFA.
 
-For more details, please have a look at
-[python-mip-sklearn](https://github.com/LREN-CHUV/python-base-docker-images/blob/master/python-mip-sklearn/README.md).
-
-
 ## How to update it
 
 1) Update the library code, update the version number in the __setup.cfg__ file and
