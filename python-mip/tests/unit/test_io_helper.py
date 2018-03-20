@@ -5,14 +5,24 @@ from . import fixtures as fx
 def test_format_variable():
     r = _format_variable('lefthippocampus', fx.data().to_dict('list'), fx.metadata())
     del r['series']
-    assert r == {'name': 'lefthippocampus', 'type': {'name': 'real'}, 'mean': 3.0, 'std': 0.35}
+    assert r == {
+        'name': 'lefthippocampus',
+        'type': {
+            'name': 'real'
+        },
+        'mean': 3.0,
+        'std': 0.35,
+        'label': 'lefthippocampus'
+    }
 
     r = _format_variable('agegroup', fx.data().to_dict('list'), fx.metadata())
     assert r == {
         'name': 'agegroup',
         'type': {
             'name': 'polynominal',
-            'enumeration': ['-50y', '50-59y', '60-69y', '70-79y', '+80y']
+            'enumeration': ['-50y', '50-59y', '60-69y', '70-79y', '+80y'],
+            'enumeration_labels': ['-50y', '50-59y', '60-69y', '70-79y', '+80y']
         },
-        'series': ['70-79y', '70-79y', '70-79y', '70-79y', '+80y']
+        'series': ['70-79y', '70-79y', '70-79y', '70-79y', '+80y'],
+        'label': 'Age Group'
     }
