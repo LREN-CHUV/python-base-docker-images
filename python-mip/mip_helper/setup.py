@@ -17,7 +17,7 @@ setup(
     extras_require={
         'test': ['unittest', 'nose'],
     },
-    install_requires=['psycopg2>=2.7.4',
+    install_requires=['psycopg2-binary>=2.7.4',
                       'sqlalchemy>=1.2.5',
                       'pandas==0.22.0'],
     include_package_data=True,
