@@ -42,7 +42,7 @@ def fetch_data():
     try:
         df = pandas.read_sql_query(_get_query(), engine)
         raw_data = df.to_dict('list')
-        data['dependent'] = [_format_variable(var, raw_data, metadata)]
+        data['dependent'] = [_format_variable(var, raw_data, metadata)] if var else []
         data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
     except ProgrammingError as ex:
         logging.warning("A problem occurred while querying the database, "
@@ -64,31 +64,30 @@ def save_results(pfa, error, shape):
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
-    query = """
-      INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)
-    """
-    sql = sqlalchemy.text(query)
+    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)")
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
-                   # TODO: shouldn't this rather be utcnow()?
-                   timestamp=datetime.datetime.now(),
+                   timestamp=datetime.datetime.utcnow(),
                    data=pfa,
                    error=error,
                    shape=shape,
                    function=_get_function())
 
 
-def get_results():
+def get_results(job_id=None, node=None):
     """
     Return job result as a dictionary if exists. Return None if it does not exist.
     :param job_id: Job ID
     """
+    assert isinstance(job_id, str)
     engine = sqlalchemy.create_engine(_get_output_db_url())
     Session.configure(bind=engine)
 
     session = Session()
-    job_result = session.query(JobResult).filter_by(job_id=_get_job_id(), node=_get_node()).first()
+    job_id = job_id or _get_job_id()
+    node = node or _get_node()
+    job_result = session.query(JobResult).filter_by(job_id=job_id, node=node).first()
     session.close()
 
     return job_result
@@ -102,10 +101,10 @@ def _format_variable(var_code, raw_data, vars_meta):
     var_type = _get_type(var_code, vars_meta)
     var = {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
     var_meta = vars_meta[var_code]
-    if var['type'] == 'real':
+    if var['type']['name'] in ('real', 'integer'):
         for stat in ['mean', 'std', 'min', 'max']:
             if stat in var_meta:
-                var[stat] = var_meta[stat]
+                var[stat] = float(var_meta[stat])
     return var
 
 
@@ -123,9 +122,10 @@ def _get_type(var_code, vars_meta):
     type_info = dict()
     try:
         var_meta = vars_meta[var_code]
-        type_info['name'] = var_meta['type'] if 'type' in var_meta else 'unknown'
+        type_info['name'] = var_meta.get('type', 'unknown')
         if type_info['name'] in ['polynominal', 'binominal']:
             type_info['enumeration'] = [e['code'] for e in var_meta['enumerations']]
+
     except KeyError:
         logging.warning("Cannot read meta-data for variable %s !", var_code)
         type_info['name'] = 'unknown'
