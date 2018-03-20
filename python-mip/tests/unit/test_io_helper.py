@@ -1,3 +1,4 @@
+import numpy as np
 from mip_helper.mip_helper.io_helper import _format_variable
 from . import fixtures as fx
 
@@ -26,3 +27,10 @@ def test_format_variable():
         'series': ['70-79y', '70-79y', '70-79y', '70-79y', '+80y'],
         'label': 'Age Group'
     }
+
+
+def test_format_variable_None_nan():
+    data = fx.data().to_dict('list')
+    data['lefthippocampus'] = [np.nan, None, 42.]
+    r = _format_variable('lefthippocampus', data, fx.metadata())
+    assert r['series'] == [None, None, 42.0]

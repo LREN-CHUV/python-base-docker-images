@@ -7,6 +7,7 @@ import os
 import datetime
 import re
 import json
+import numpy as np
 from sqlalchemy.exc import ProgrammingError
 
 from .models import JobResult
@@ -99,7 +100,8 @@ def get_results(job_id=None, node=None):
 
 def _format_variable(var_code, raw_data, vars_meta):
     var_type = _get_type(var_code, vars_meta)
-    var = {'name': var_code, 'type': var_type, 'series': raw_data[var_code]}
+    series = _get_series(raw_data, var_code)
+    var = {'name': var_code, 'type': var_type, 'series': series}
     var_meta = vars_meta[var_code]
     if var['type']['name'] in ('real', 'integer'):
         for stat in ['mean', 'std', 'min', 'max']:
@@ -107,6 +109,11 @@ def _format_variable(var_code, raw_data, vars_meta):
                 var[stat] = float(var_meta[stat])
     var['label'] = var_meta.get('label', var_code)
     return var
+
+
+def _get_series(raw_data, var_code):
+    series = raw_data[var_code]
+    return [None if np.isreal(s) and s is not None and np.isnan(s) else s for s in series]
 
 
 def _get_parameters():
