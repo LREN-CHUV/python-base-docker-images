@@ -105,6 +105,7 @@ def _format_variable(var_code, raw_data, vars_meta):
         for stat in ['mean', 'std', 'min', 'max']:
             if stat in var_meta:
                 var[stat] = float(var_meta[stat])
+    var['label'] = var_meta.get('label', var_code)
     return var
 
 
