@@ -1,0 +1,9 @@
+target_image:
+  build: Dockerfile
+  image: hbpmip/python-mip-sklearn
+  pre:
+    - echo "Start building python-mip-sklearn"
+  post:
+    - echo "Finished python-mip-sklearn"
+  test:
+    - ./tests/test.sh
