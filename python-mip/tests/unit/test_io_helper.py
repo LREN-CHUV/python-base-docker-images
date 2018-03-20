@@ -1,5 +1,5 @@
 import numpy as np
-from mip_helper.mip_helper.io_helper import _format_variable
+from mip_helper.io_helper import _format_variable
 from . import fixtures as fx
 
 

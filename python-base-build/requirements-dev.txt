@@ -1,6 +1,7 @@
 pre-commit>=0.13
+setuptools>=39.0.1
 nose
 pytest
-wheel
+wheel>=0.30.0
 mock
 ipdb
