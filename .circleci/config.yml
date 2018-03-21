@@ -41,7 +41,8 @@ jobs:
           name: "Build python-mip"
           command: |
             PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/build.sh
-      - run:
-          name: "Test python-mip"
-          command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/tests/test.sh
+      # TODO: integration tests for python-mip
+      #- run:
+      #    name: "Test python-mip"
+      #    command: |
+      #      PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/tests/test.sh
