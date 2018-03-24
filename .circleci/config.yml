@@ -46,3 +46,12 @@ jobs:
       #    name: "Test python-mip"
       #    command: |
       #      PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/tests/test.sh
+      - run:
+          name: "Build python-mip-sklearn"
+          command: |
+            PATH=$PATH:/$HOME/.captain/bin/ ./python-mip-sklearn/build.sh
+      # TODO: integration tests for python-mip-sklearn
+      #- run:
+      #    name: "Test python-mip-sklearn"
+      #    command: |
+      #      PATH=$PATH:/$HOME/.captain/bin/ ./python-mip-sklearn/tests/test.sh

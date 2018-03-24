@@ -16,7 +16,7 @@ get_script_dir () {
      pwd
 }
 
-WORKSPACE=$(get_script_dir)
+cd "$(get_script_dir)"
 
 count=$(git status --porcelain | wc -l)
 if test $count -gt 0; then
