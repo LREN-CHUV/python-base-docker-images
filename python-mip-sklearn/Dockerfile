@@ -1,6 +1,9 @@
 FROM hbpmip/python-mip:0.4.0
 
-MAINTAINER mirco.nasuti@chuv.ch
+COPY requirements.txt /
+COPY docker-entrypoint.sh /
+
+RUN pip install -r /requirements.txt
 
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="hbpmip/python-mip-sklearn" \
@@ -14,14 +17,6 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.license="AGPLv3" \
       org.label-schema.docker.dockerfile="Dockerfile" \
       org.label-schema.schema-version="1.0"
-
-RUN apt-get update
-RUN apt-get install -y git
-
-COPY requirements.txt /
-COPY docker-entrypoint.sh /
-
-RUN pip install -r /requirements.txt
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["compute"]
