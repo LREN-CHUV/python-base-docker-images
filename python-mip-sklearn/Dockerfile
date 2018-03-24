@@ -1,3 +1,17 @@
+FROM hbpmip/python-base-build:0.4.4
+
+COPY sklearn_to_pfa/requirements-dev.txt /requirements-dev.txt
+RUN pip install -r /requirements-dev.txt
+
+COPY requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
+
+# Unit tests for sklearn_to_pfa
+COPY sklearn_to_pfa/tests /src/tests/
+
+WORKDIR /src
+RUN pytest tests/
+
 FROM hbpmip/python-mip:0.4.0
 
 COPY requirements.txt /
