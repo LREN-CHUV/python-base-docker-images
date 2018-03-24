@@ -3,6 +3,8 @@ from setuptools import config
 
 conf_dict = config.read_configuration('setup.cfg')
 
+REQUIRED = [str(ir.req) for ir in parse_requirements('requirements.txt', session='hack')]
+
 setup(
     name='mip_helper',
     version=conf_dict['metadata']['version'],
@@ -17,9 +19,7 @@ setup(
     extras_require={
         'test': ['unittest', 'nose'],
     },
-    install_requires=['psycopg2-binary>=2.7.4',
-                      'sqlalchemy>=1.2.5',
-                      'pandas==0.22.0'],
+    install_requires=REQUIRED,
     include_package_data=True,
     classifiers=(
         'Intended Audience :: Developers',

@@ -1,4 +1,2 @@
-# mip_helper==0.4.0
-git+https://github.com/LREN-CHUV/python-base-docker-images.git#egg=io_helper&subdirectory=python-mip/mip_helper
-# sklearn_to_pfa==0.0.1
-git+https://github.com/Marigold/python-base-docker-images.git@sklearn_to_pfa#egg=sklearn_to_pfa&subdirectory=python-mip-sklearn/sklearn_to_pfa
+mip_helper==0.4.0
+sklearn_to_pfa==0.0.1
