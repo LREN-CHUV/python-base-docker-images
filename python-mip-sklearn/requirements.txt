@@ -1,2 +1,4 @@
 mip_helper==0.4.0
-sklearn_to_pfa==0.1.1
+pandas
+scipy
+scikit-learn
