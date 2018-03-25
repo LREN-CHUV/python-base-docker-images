@@ -2,4 +2,4 @@ pandas
 scipy
 scikit-learn
 # ligthweight version of hadrian that only contains titus package
-git+https://github.com/Marigold/hadrian.git@light#egg=titus&subdirectory=titus
+# git+https://github.com/Marigold/hadrian.git@light#egg=titus&subdirectory=titus
