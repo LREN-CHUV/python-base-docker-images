@@ -1,4 +1,4 @@
-FROM hbpmip/python-base-build:0.4.4
+FROM hbpmip/python-mip:0.4.0
 
 COPY sklearn_to_pfa/requirements-dev.txt /requirements-dev.txt
 RUN pip install -r /requirements-dev.txt
