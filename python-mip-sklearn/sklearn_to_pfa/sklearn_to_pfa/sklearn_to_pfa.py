@@ -620,6 +620,8 @@ def _fix_types_compatibility(types):
     for name, typ in types:
         if typ == 'real':
             typ = 'double'
+        elif typ == 'integer':
+            typ = 'int'
         elif typ in ('polynominal', 'binominal'):
             typ = 'string'
         new_types.append((name, typ))

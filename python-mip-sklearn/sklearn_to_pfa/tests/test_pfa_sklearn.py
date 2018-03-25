@@ -7,6 +7,7 @@ from titus.genpy import PFAEngine
 from sklearn.linear_model import SGDRegressor, SGDClassifier
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.cluster import KMeans
 from sklearn import datasets
 
@@ -59,6 +60,18 @@ def _mixednb(X, y, is_nominal, **kwargs):
 def _kmeans(X, **kwargs):
     estimator = KMeans(**kwargs)
     estimator.fit(X)
+    return estimator
+
+
+def _kneighborsregressor(X, y, **kwargs):
+    estimator = KNeighborsRegressor(**kwargs)
+    estimator.fit(X, y)
+    return estimator
+
+
+def _kneighborsclassifier(X, y, **kwargs):
+    estimator = KNeighborsClassifier(**kwargs)
+    estimator.fit(X, y)
     return estimator
 
 
@@ -196,6 +209,34 @@ def test_estimator_to_pfa_kmeans():
     X, _, types = _classification_task()
 
     estimator = _kmeans(X, n_clusters=2)
+
+    pfa = sklearn_to_pfa(estimator, types)
+
+    estimator_pred = estimator.predict(X)
+    pfa_pred = _predict_pfa(X, types, pfa)
+
+    assert all(estimator_pred == pfa_pred)
+
+
+def test_estimator_to_pfa_kneighborsregressor():
+    """Check that converted PFA is giving the same results as KNeighborsRegressor"""
+    X, y, types = _regression_task()
+
+    estimator = _kneighborsregressor(X, y, n_neighbors=2)
+
+    pfa = sklearn_to_pfa(estimator, types)
+
+    estimator_pred = estimator.predict(X)
+    pfa_pred = _predict_pfa(X, types, pfa)
+
+    assert all(estimator_pred == pfa_pred)
+
+
+def test_estimator_to_pfa_kneighborsclassifier():
+    """Check that converted PFA is giving the same results as KNeighborsClassifier"""
+    X, y, types = _classification_task()
+
+    estimator = _kneighborsclassifier(X, y, n_neighbors=2)
 
     pfa = sklearn_to_pfa(estimator, types)
 
