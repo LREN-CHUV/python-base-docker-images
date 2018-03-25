@@ -1,7 +1,4 @@
-FROM hbpmip/python-mip:0.4.0
-
-RUN apt-get update
-RUN apt-get install -y git
+FROM hbpmip/python-base-build:0.4.4
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
@@ -15,10 +12,16 @@ RUN pip install -r /requirements.txt
 
 # Light version of Titus for Python3 installed from Git
 # LATER: install Titus for Python 3 from Pypi once it is released officially
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    rm -rf /tmp/* /var/tmp/* /var/cache/* /var/lib/apt/lists/*
 RUN pip install git+https://github.com/Marigold/hadrian.git@light#subdirectory=titus
 
 COPY sklearn_to_pfa /sklearn_to_pfa
-RUN cd sklearn_to_pfa && python setup.py install
+WORKDIR /sklearn_to_pfa
+RUN python setup.py install
+
+WORKDIR /
 
 # Unit tests for sklearn_to_pfa
 COPY sklearn_to_pfa/tests /src/tests/
@@ -28,7 +31,7 @@ RUN pytest tests/
 
 
 
-FROM hbpmip/python-mip:0.4.0
+FROM hbpmip/python-base-build:0.4.4
 
 COPY requirements.txt /
 COPY docker-entrypoint.sh /
@@ -39,13 +42,16 @@ RUN pip install -r /requirements.txt
 # LATER: install Titus for Python 3 from Pypi once it is released officially
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+    rm -rf /tmp/* /var/tmp/* /var/cache/* /var/lib/apt/lists/*
 
 RUN pip install git+https://github.com/Marigold/hadrian.git@light#subdirectory=titus
 
 # TODO: this is only for prototyping, should be installed from pypi once it gets stable
 COPY sklearn_to_pfa /sklearn_to_pfa
-RUN cd sklearn_to_pfa && python setup.py install
+WORKDIR /sklearn_to_pfa
+RUN python setup.py install
+
+WORKDIR /
 
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="hbpmip/python-mip-sklearn" \
