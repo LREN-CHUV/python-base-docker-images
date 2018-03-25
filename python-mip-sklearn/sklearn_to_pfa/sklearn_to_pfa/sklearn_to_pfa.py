@@ -17,6 +17,7 @@
 from sklearn.linear_model import SGDRegressor, SGDClassifier
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.cluster import KMeans
 from .mixed_nb import MixedNB
 import numpy as np
@@ -49,6 +50,10 @@ def sklearn_to_pfa(estimator, types, featurizer=None):
         return _pfa_mixednb(estimator, types, featurizer)
     elif isinstance(estimator, KMeans):
         return _pfa_kmeans(estimator, types, featurizer)
+    elif isinstance(estimator, KNeighborsRegressor):
+        return _pfa_kneighborsregressor(estimator, types, featurizer)
+    elif isinstance(estimator, KNeighborsClassifier):
+        return _pfa_kneighborsclassifier(estimator, types, featurizer)
     else:
         raise NotImplementedError('Estimator {} is not yet supported'.format(estimator.__class__.__name__))
 
@@ -494,6 +499,103 @@ action:
             'id': i
         } for i, c in enumerate(estimator.cluster_centers_)
     ]
+    return pfa
+
+
+def _pfa_kneighborsregressor(estimator, types, featurizer):
+    """See https://github.com/opendatagroup/hadrian/wiki/Basic-nearest-neighbors"""
+    input_record = _input_record(types)
+
+    # construct template
+    pretty_pfa = """
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    Point = record(Point,
+                   x: array(double),
+                   y: double);
+    Codebook = array(Point);
+    Input = {input_record}
+input: Input
+output: double
+cells:
+    codebook(Codebook) = [];
+    nNeighbors(int) = 5;
+fcns:
+{functions}
+action:
+    var x = {featurizer};
+    var neighbors = model.neighbor.nearestK(nNeighbors, x, codebook, fcn(x: array(double), p: Point -> double) {{
+        metric.simpleEuclidean(x, p.x)
+    }});
+    a.mean(a.map(neighbors, fcn(p: Point -> double) p.y))
+    """.format(
+        input_record=input_record, featurizer=featurizer, functions=_functions()
+    ).strip()
+
+    # compile
+    pfa = titus.prettypfa.jsonNode(pretty_pfa)
+
+    # add model from scikit-learn
+    pfa['cells']['codebook']['init'] = [
+        {
+            'x': x.tolist(),
+            'y': y
+        } for x, y in zip(estimator._fit_X, estimator._y)
+    ]
+    pfa['cells']['nNeighbors']['init'] = estimator.n_neighbors
+
+    return pfa
+
+
+def _pfa_kneighborsclassifier(estimator, types, featurizer):
+    """See https://github.com/opendatagroup/hadrian/wiki/Basic-nearest-neighbors"""
+    input_record = _input_record(types)
+
+    # construct template
+    pretty_pfa = """
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    Point = record(Point,
+                   x: array(double),
+                   y: string);
+    Codebook = array(Point);
+    Input = {input_record}
+input: Input
+output: string
+cells:
+    codebook(Codebook) = [];
+    nNeighbors(int) = 5;
+fcns:
+{functions}
+action:
+    var x = {featurizer};
+    var neighbors = model.neighbor.nearestK(nNeighbors, x, codebook, fcn(x: array(double), p: Point -> double) {{
+        metric.simpleEuclidean(x, p.x)
+    }});
+    a.mode(a.map(neighbors, fcn(p: Point -> string) p.y))
+    """.format(
+        input_record=input_record, featurizer=featurizer, functions=_functions()
+    ).strip()
+
+    # compile
+    pfa = titus.prettypfa.jsonNode(pretty_pfa)
+
+    # add model from scikit-learn
+    y_labels = [estimator.classes_[e] for e in estimator._y]
+    pfa['cells']['codebook']['init'] = [
+        {
+            'x': x.tolist(),
+            'y': y
+        } for x, y in zip(estimator._fit_X, y_labels)
+    ]
+    pfa['cells']['nNeighbors']['init'] = estimator.n_neighbors
+
     return pfa
 
 
