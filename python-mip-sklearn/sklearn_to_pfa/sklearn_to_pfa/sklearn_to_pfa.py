@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: move to a separate repository or at least python-mip-sklearn
+import sklearn
 from sklearn.linear_model import SGDRegressor, SGDClassifier
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.cluster import KMeans
 from .mixed_nb import MixedNB
 import logging
@@ -55,6 +56,10 @@ def sklearn_to_pfa(estimator, types, featurizer=None):
         return _pfa_kneighborsregressor(estimator, types, featurizer)
     elif isinstance(estimator, KNeighborsClassifier):
         return _pfa_kneighborsclassifier(estimator, types, featurizer)
+    elif isinstance(estimator, GradientBoostingRegressor):
+        return _pfa_gradientboostingregressor(estimator, types, featurizer)
+    elif isinstance(estimator, GradientBoostingClassifier):
+        return _pfa_gradientboostingclassifier(estimator, types, featurizer)
     else:
         raise NotImplementedError('Estimator {} is not yet supported'.format(estimator.__class__.__name__))
 
@@ -608,6 +613,70 @@ action:
     pfa['cells']['nNeighbors']['init'] = estimator.n_neighbors
 
     return pfa
+
+
+def make_tree(tree, node_id=0):
+    if tree.children_left[node_id] == sklearn.tree._tree.TREE_LEAF:
+        return {'double': tree.value[node_id][0, 0]}
+
+    return {'TreeNode': {
+        'feature': tree.feature[node_id],
+        'operator': '<=',
+        'value': tree.threshold[node_id],
+        'pass': make_tree(tree, tree.children_left[node_id]),
+        'fail': make_tree(tree, tree.children_right[node_id])
+    }}
+
+
+def _pfa_gradientboostingregressor(estimator, types, featurizer):
+    """See https://github.com/opendatagroup/hadrian/wiki/Basic-decision-tree"""
+    input_record = _input_record(types)
+
+    # construct template
+    pretty_pfa = """
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    TreeNode = record(TreeNode,
+                    feature: int,
+                    operator: string,
+                    value: double,
+                    pass: union(double, TreeNode),
+                    fail: union(double, TreeNode));
+    Row = record(Row, values: array(double));
+    Input = {input_record}
+input: Input
+output: double
+cells:
+    // empty tree to satisfy type constraint; will be filled in later
+    tree(TreeNode) = {{feature: 0, operator: "", value: 0.0, pass: {{double: 0.0}}, fail: {{double: 0.0}}}}
+fcns:
+{functions}
+action:
+    var x = {featurizer};
+    var row = new(Row, values: x);
+    model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
+      d.values[t.feature] <= t.value
+    }})
+    """.format(
+        input_record=input_record, featurizer=featurizer, functions=_functions()
+    ).strip()
+
+    # compile
+    pfa = titus.prettypfa.jsonNode(pretty_pfa)
+
+    # add model from scikit-learn
+    tree = estimator.estimators_[0, 0].tree_
+    tree_dict = make_tree(tree)['TreeNode']
+    pfa["cells"]["tree"]["init"] = tree_dict
+
+    return pfa
+
+
+def _pfa_gradientboostingclassifier(estimator, types, featurizer):
+    pass
 
 
 def _construct_featurizer(types):
