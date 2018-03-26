@@ -19,5 +19,5 @@ def test_featurizer():
     assert pfa == """
 a.flatten(new(array(array(double)),
     u.C(input.c0, new(array(string), "a","b")),
-    u.arr((input.c1 - 1) / 2)
+    u.arr((cast.double(input.c1) - 1.0) / 2.0)
 ))""".strip()

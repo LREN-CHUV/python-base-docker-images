@@ -600,12 +600,18 @@ action:
 
 
 def _construct_featurizer(types):
-    inputs = ',\n'.join(['input.' + name for name, _ in types])
+    inputs = []
+    for name, typ in types:
+        if typ == 'int':
+            inputs.append('cast.double(input.{})'.format(name))
+        else:
+            inputs.append('input.{}'.format(name))
+
     return """
 new(array(double),
     {inputs}
     )
-    """.format(inputs=inputs).strip()
+    """.format(inputs=',\n'.join(inputs)).strip()
 
 
 def _input_record(types):

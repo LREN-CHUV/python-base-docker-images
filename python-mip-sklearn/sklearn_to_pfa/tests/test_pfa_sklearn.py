@@ -81,7 +81,14 @@ def _predict_pfa(X, types, pfa):
 
     pfa_pred = []
     for x in X:
-        pfa_pred.append(engine.action(dict(zip(columns, x))))
+        p = {}
+        for col, e, (_, typ) in zip(columns, x, types):
+            if typ == 'integer':
+                p[col] = int(e)
+            else:
+                p[col] = e
+
+        pfa_pred.append(engine.action(p))
     return np.array(pfa_pred)
 
 
@@ -121,11 +128,28 @@ def test_estimator_to_pfa_mlp_regressor():
     assert _arrays_equal(estimator_pred, pfa_pred)
 
 
-def _classification_task(n_features=5):
+def _classification_task(n_features=5, dtypes=None):
     X, y = datasets.make_classification(n_samples=100, n_features=n_features, n_redundant=0, n_informative=n_features, n_classes=3)
     y = pd.Series(y).map({0: 'a', 1: 'b', 2: 'c'}).values
-
     types = [('feature{}'.format(i), 'double') for i in range(n_features)]
+
+    if dtypes is not None:
+        assert len(dtypes) == n_features
+        for i, t in enumerate(dtypes):
+            # integer
+            if t == 'i':
+                X[:, i] = X[:, i].astype(int)
+                types[i] = ('feature{}'.format(i), 'integer')
+            # nominal
+            elif t == 'n':
+                # convert some features to nominal ones (one-hot encoded)
+                X[:, i] = (X[:, i] > 0).astype(int)
+                types[i] = ('feature{}'.format(i), 'integer')
+            elif t == 'c':
+                pass
+            else:
+                raise NotImplementedError()
+
     return X, y, types
 
 
@@ -186,15 +210,13 @@ def test_estimator_to_pfa_gaussiannb():
     assert all(estimator_pred == pfa_pred)
 
 
-@pytest.mark.parametrize('n_continuous', [0, 3, 5])
-def test_estimator_to_pfa_mixednb(n_continuous):
+@pytest.mark.parametrize('dtypes', ['nnnnn', 'cccnn', 'cccin'])
+def test_estimator_to_pfa_mixednb(dtypes):
     """Check that converted PFA is giving the same results as MixedNB"""
-    X, y, types = _classification_task()
+    X, y, types = _classification_task(dtypes=dtypes)
 
-    # convert some features to nominal ones (one-hot encoded)
-    X[:, n_continuous:] = (X[:, n_continuous:] > 0).astype(int)
-
-    estimator = _mixednb(X, y, is_nominal=[False] * n_continuous + [True] * (5 - n_continuous), classes=['a', 'b', 'c'])
+    is_nominal = [t == 'n' for t in dtypes]
+    estimator = _mixednb(X, y, is_nominal=is_nominal, classes=['a', 'b', 'c'])
 
     pfa = sklearn_to_pfa(estimator, types)
 
