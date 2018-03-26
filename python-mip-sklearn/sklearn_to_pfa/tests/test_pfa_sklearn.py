@@ -134,7 +134,6 @@ def _classification_task(n_features=5, dtypes=None):
     types = [('feature{}'.format(i), 'double') for i in range(n_features)]
 
     if dtypes is not None:
-        assert len(dtypes) == n_features
         for i, t in enumerate(dtypes):
             # integer
             if t == 'i':
