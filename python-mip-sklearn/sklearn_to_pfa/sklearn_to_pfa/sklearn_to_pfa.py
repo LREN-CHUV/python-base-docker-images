@@ -20,6 +20,7 @@ from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.cluster import KMeans
 from .mixed_nb import MixedNB
+import logging
 import numpy as np
 import titus.prettypfa
 
@@ -95,6 +96,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -168,6 +170,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -214,6 +217,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -261,6 +265,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -316,6 +321,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -369,6 +375,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -437,6 +444,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -490,6 +498,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -536,6 +545,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
@@ -584,6 +594,7 @@ action:
     ).strip()
 
     # compile
+    logging.info(pretty_pfa)
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
