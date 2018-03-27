@@ -1,4 +1,4 @@
-FROM hbpmip/python-base-build:0.4.4
+FROM hbpmip/python-base-build:0.4.5
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
@@ -31,7 +31,7 @@ RUN pytest tests/
 
 
 
-FROM hbpmip/python-base-build:0.4.4
+FROM hbpmip/python-base-build:0.4.5
 
 COPY requirements.txt /
 COPY docker-entrypoint.sh /

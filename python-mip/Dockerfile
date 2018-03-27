@@ -1,4 +1,4 @@
-FROM hbpmip/python-base-build:0.4.4
+FROM hbpmip/python-base-build:0.4.5
 
 COPY mip_helper/requirements-dev.txt /requirements-dev.txt
 RUN pip install -r /requirements-dev.txt
