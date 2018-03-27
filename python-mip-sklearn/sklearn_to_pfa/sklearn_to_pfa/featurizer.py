@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
 
 
@@ -60,7 +59,9 @@ class Standardize(Transform):
         return ((X[self.col] - self.mu) / self.sigma)[:, np.newaxis]
 
     def pfa(self):
-        return 'u.arr((input.{col} - {mu}) / {sigma})'.format(col=self.col, mu=self.mu, sigma=self.sigma)
+        return 'u.arr((cast.double(input.{col}) - {mu}) / {sigma})'.format(
+            col=self.col, mu=float(self.mu), sigma=float(self.sigma)
+        )
 
 
 class OneHotEncoding(Transform):
