@@ -1,9 +1,5 @@
 FROM hbpmip/python-base-build:0.4.5
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
-
 COPY sklearn_to_pfa/requirements-dev.txt /requirements-dev.txt
 RUN pip install -r /requirements-dev.txt
 
