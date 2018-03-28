@@ -617,12 +617,12 @@ action:
 
 def make_tree(tree, node_id=0):
     if tree.children_left[node_id] == sklearn.tree._tree.TREE_LEAF:
-        return {'double': tree.value[node_id][0, 0]}
+        return {'double': float(tree.value[node_id][0, 0])}
 
     return {'TreeNode': {
-        'feature': tree.feature[node_id],
+        'feature': int(tree.feature[node_id]),
         'operator': '<=',
-        'value': tree.threshold[node_id],
+        'value': float(tree.threshold[node_id]),
         'pass': make_tree(tree, tree.children_left[node_id]),
         'fail': make_tree(tree, tree.children_right[node_id])
     }}
@@ -651,15 +651,23 @@ input: Input
 output: double
 cells:
     // empty tree to satisfy type constraint; will be filled in later
-    tree(TreeNode) = {{feature: 0, operator: "", value: 0.0, pass: {{double: 0.0}}, fail: {{double: 0.0}}}}
+    trees(array(TreeNode)) = [];
+    // model intercept to which tree predictions are added
+    intercept(double) = 0.0;
+    learningRate(double) = 0.0;
 fcns:
 {functions}
 action:
     var x = {featurizer};
     var row = new(Row, values: x);
-    model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
-      d.values[t.feature] <= t.value
-    }})
+
+    var scores = a.map(trees, fcn(tree: TreeNode -> double) {{
+      model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
+        d.values[t.feature] <= t.value
+      }})
+    }});
+
+    intercept + learningRate * a.sum(scores)
     """.format(
         input_record=input_record, featurizer=featurizer, functions=_functions()
     ).strip()
@@ -668,15 +676,83 @@ action:
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
-    tree = estimator.estimators_[0, 0].tree_
-    tree_dict = make_tree(tree)['TreeNode']
-    pfa["cells"]["tree"]["init"] = tree_dict
+    tree_dicts = []
+    for tree in estimator.estimators_[:, 0]:
+        tree_dicts.append(make_tree(tree.tree_)['TreeNode'])
+    pfa["cells"]["trees"]["init"] = tree_dicts
+    pfa['cells']['intercept']['init'] = estimator.init_.mean
+    pfa['cells']['learningRate']['init'] = estimator.learning_rate
 
     return pfa
 
 
 def _pfa_gradientboostingclassifier(estimator, types, featurizer):
-    pass
+    """See https://github.com/opendatagroup/hadrian/wiki/Basic-decision-tree"""
+    input_record = _input_record(types)
+
+    # construct template
+    pretty_pfa = """
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    TreeNode = record(TreeNode,
+                    feature: int,
+                    operator: string,
+                    value: double,
+                    pass: union(double, TreeNode),
+                    fail: union(double, TreeNode));
+    Row = record(Row, values: array(double));
+    Input = {input_record}
+input: Input
+output: string
+cells:
+    classes(array(string)) = [];
+    // set of trees for each class
+    classesTrees(array(array(TreeNode))) = [];
+    // model priors to which tree predictions are added
+    priors(array(double)) = [];
+    learningRate(double) = 0.0;
+fcns:
+{functions}
+action:
+    var x = {featurizer};
+    var row = new(Row, values: x);
+
+    // trees activations
+    var activations = a.map(classesTrees, fcn(trees: array(TreeNode) -> double) {{
+        var scores = a.map(trees, fcn(tree: TreeNode -> double) {{
+          model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
+            d.values[t.feature] <= t.value
+          }})
+        }});
+        learningRate * a.sum(scores)
+    }});
+
+    // add priors
+    activations = la.add(priors, activations);
+
+    // probabilities
+    var norm = a.logsumexp(activations);
+    var probs = a.map(activations, fcn(x: double -> double) m.exp(x - norm));
+
+    classes[a.argmax(probs)]
+    """.format(
+        input_record=input_record, featurizer=featurizer, functions=_functions()
+    ).strip()
+
+    # compile
+    pfa = titus.prettypfa.jsonNode(pretty_pfa)
+
+    # add model from scikit-learn
+    tree_dicts = [[make_tree(tree.tree_)['TreeNode'] for tree in trees] for trees in estimator.estimators_.T]
+    pfa["cells"]["classesTrees"]["init"] = tree_dicts
+    pfa['cells']['classes']['init'] = list(estimator.classes_)
+    pfa['cells']['priors']['init'] = list(estimator.init_.priors)
+    pfa['cells']['learningRate']['init'] = estimator.learning_rate
+
+    return pfa
 
 
 def _construct_featurizer(types):
