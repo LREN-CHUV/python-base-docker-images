@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: move to a separate repository or at least python-mip-sklearn
+import sklearn
 from sklearn.linear_model import SGDRegressor, SGDClassifier
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.cluster import KMeans
 from .mixed_nb import MixedNB
 import logging
@@ -55,6 +56,10 @@ def sklearn_to_pfa(estimator, types, featurizer=None):
         return _pfa_kneighborsregressor(estimator, types, featurizer)
     elif isinstance(estimator, KNeighborsClassifier):
         return _pfa_kneighborsclassifier(estimator, types, featurizer)
+    elif isinstance(estimator, GradientBoostingRegressor):
+        return _pfa_gradientboostingregressor(estimator, types, featurizer)
+    elif isinstance(estimator, GradientBoostingClassifier):
+        return _pfa_gradientboostingclassifier(estimator, types, featurizer)
     else:
         raise NotImplementedError('Estimator {} is not yet supported'.format(estimator.__class__.__name__))
 
@@ -606,6 +611,146 @@ action:
         } for x, y in zip(estimator._fit_X, y_labels)
     ]
     pfa['cells']['nNeighbors']['init'] = estimator.n_neighbors
+
+    return pfa
+
+
+def make_tree(tree, node_id=0):
+    if tree.children_left[node_id] == sklearn.tree._tree.TREE_LEAF:
+        return {'double': float(tree.value[node_id][0, 0])}
+
+    return {'TreeNode': {
+        'feature': int(tree.feature[node_id]),
+        'operator': '<=',
+        'value': float(tree.threshold[node_id]),
+        'pass': make_tree(tree, tree.children_left[node_id]),
+        'fail': make_tree(tree, tree.children_right[node_id])
+    }}
+
+
+def _pfa_gradientboostingregressor(estimator, types, featurizer):
+    """See https://github.com/opendatagroup/hadrian/wiki/Basic-decision-tree"""
+    input_record = _input_record(types)
+
+    # construct template
+    pretty_pfa = """
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    TreeNode = record(TreeNode,
+                    feature: int,
+                    operator: string,
+                    value: double,
+                    pass: union(double, TreeNode),
+                    fail: union(double, TreeNode));
+    Row = record(Row, values: array(double));
+    Input = {input_record}
+input: Input
+output: double
+cells:
+    // empty tree to satisfy type constraint; will be filled in later
+    trees(array(TreeNode)) = [];
+    // model intercept to which tree predictions are added
+    intercept(double) = 0.0;
+    learningRate(double) = 0.0;
+fcns:
+{functions}
+action:
+    var x = {featurizer};
+    var row = new(Row, values: x);
+
+    var scores = a.map(trees, fcn(tree: TreeNode -> double) {{
+      model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
+        d.values[t.feature] <= t.value
+      }})
+    }});
+
+    intercept + learningRate * a.sum(scores)
+    """.format(
+        input_record=input_record, featurizer=featurizer, functions=_functions()
+    ).strip()
+
+    # compile
+    pfa = titus.prettypfa.jsonNode(pretty_pfa)
+
+    # add model from scikit-learn
+    tree_dicts = []
+    for tree in estimator.estimators_[:, 0]:
+        tree_dicts.append(make_tree(tree.tree_)['TreeNode'])
+    pfa["cells"]["trees"]["init"] = tree_dicts
+    pfa['cells']['intercept']['init'] = estimator.init_.mean
+    pfa['cells']['learningRate']['init'] = estimator.learning_rate
+
+    return pfa
+
+
+def _pfa_gradientboostingclassifier(estimator, types, featurizer):
+    """See https://github.com/opendatagroup/hadrian/wiki/Basic-decision-tree"""
+    input_record = _input_record(types)
+
+    # construct template
+    pretty_pfa = """
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    TreeNode = record(TreeNode,
+                    feature: int,
+                    operator: string,
+                    value: double,
+                    pass: union(double, TreeNode),
+                    fail: union(double, TreeNode));
+    Row = record(Row, values: array(double));
+    Input = {input_record}
+input: Input
+output: string
+cells:
+    classes(array(string)) = [];
+    // set of trees for each class
+    classesTrees(array(array(TreeNode))) = [];
+    // model priors to which tree predictions are added
+    priors(array(double)) = [];
+    learningRate(double) = 0.0;
+fcns:
+{functions}
+action:
+    var x = {featurizer};
+    var row = new(Row, values: x);
+
+    // trees activations
+    var activations = a.map(classesTrees, fcn(trees: array(TreeNode) -> double) {{
+        var scores = a.map(trees, fcn(tree: TreeNode -> double) {{
+          model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
+            d.values[t.feature] <= t.value
+          }})
+        }});
+        learningRate * a.sum(scores)
+    }});
+
+    // add priors
+    activations = la.add(priors, activations);
+
+    // probabilities
+    var norm = a.logsumexp(activations);
+    var probs = a.map(activations, fcn(x: double -> double) m.exp(x - norm));
+
+    classes[a.argmax(probs)]
+    """.format(
+        input_record=input_record, featurizer=featurizer, functions=_functions()
+    ).strip()
+
+    # compile
+    pfa = titus.prettypfa.jsonNode(pretty_pfa)
+
+    # add model from scikit-learn
+    tree_dicts = [[make_tree(tree.tree_)['TreeNode'] for tree in trees] for trees in estimator.estimators_.T]
+    pfa["cells"]["classesTrees"]["init"] = tree_dicts
+    pfa['cells']['classes']['init'] = list(estimator.classes_)
+    pfa['cells']['priors']['init'] = list(estimator.init_.priors)
+    pfa['cells']['learningRate']['init'] = estimator.learning_rate
 
     return pfa
 

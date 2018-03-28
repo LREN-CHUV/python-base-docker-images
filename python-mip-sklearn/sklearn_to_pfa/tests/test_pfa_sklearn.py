@@ -8,6 +8,7 @@ from sklearn.linear_model import SGDRegressor, SGDClassifier
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
+from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.cluster import KMeans
 from sklearn import datasets
 
@@ -71,6 +72,18 @@ def _kneighborsregressor(X, y, **kwargs):
 
 def _kneighborsclassifier(X, y, **kwargs):
     estimator = KNeighborsClassifier(**kwargs)
+    estimator.fit(X, y)
+    return estimator
+
+
+def _gradientboostingregressor(X, y, **kwargs):
+    estimator = GradientBoostingRegressor(**kwargs)
+    estimator.fit(X, y)
+    return estimator
+
+
+def _gradientboostingclassifier(X, y, **kwargs):
+    estimator = GradientBoostingClassifier(**kwargs)
     estimator.fit(X, y)
     return estimator
 
@@ -258,6 +271,34 @@ def test_estimator_to_pfa_kneighborsclassifier():
     X, y, types = _classification_task()
 
     estimator = _kneighborsclassifier(X, y, n_neighbors=2)
+
+    pfa = sklearn_to_pfa(estimator, types)
+
+    estimator_pred = estimator.predict(X)
+    pfa_pred = _predict_pfa(X, types, pfa)
+
+    assert all(estimator_pred == pfa_pred)
+
+
+def test_estimator_to_pfa_gradientboostingregressor():
+    """Check that converted PFA is giving the same results as GradientBoostingRegressor"""
+    X, y, types = _regression_task()
+
+    estimator = _gradientboostingregressor(X, y, n_estimators=10, learning_rate=0.1)
+
+    pfa = sklearn_to_pfa(estimator, types)
+
+    estimator_pred = estimator.predict(X)
+    pfa_pred = _predict_pfa(X, types, pfa)
+
+    np.testing.assert_almost_equal(estimator_pred, pfa_pred, decimal=5)
+
+
+def test_estimator_to_pfa_gradientboostingclassifier():
+    """Check that converted PFA is giving the same results as GradientBoostingClassifier"""
+    X, y, types = _classification_task()
+
+    estimator = _gradientboostingclassifier(X, y, n_estimators=10, learning_rate=0.1)
 
     pfa = sklearn_to_pfa(estimator, types)
 
