@@ -40,7 +40,7 @@ and sets up a _FUNCTION_ environment variable containing the algorithm name (see
 ### Dockerfile example
 
 ```
-FROM hbpmip/python-mip-sklearn:hbpmip/python-mip-sklearn:hbpmip/python-mip-sklearn:hbpmip/python-mip-sklearn:hbpmip/python-mip-sklearn:0.2.2
+FROM hbpmip/python-mip-sklearn:0.2.2
 
 ENV FUNCTION python-sgdregress
 
@@ -51,4 +51,3 @@ RUN conda install -y --file /requirements.txt
 
 ENTRYPOINT ["python", "/src/sgd_regression.py"]
 ```
-
