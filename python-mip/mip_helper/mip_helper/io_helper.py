@@ -2,7 +2,7 @@
 
 import logging
 import sqlalchemy
-import pandas
+import pandas as pd
 import os
 import datetime
 import re
@@ -41,7 +41,7 @@ def fetch_data():
     metadata = _get_metadata()
 
     try:
-        df = pandas.read_sql_query(_get_query(), engine)
+        df = pd.read_sql_query(_get_query(), engine)
         raw_data = df.to_dict('list')
         data['dependent'] = [_format_variable(var, raw_data, metadata)] if var else []
         data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
