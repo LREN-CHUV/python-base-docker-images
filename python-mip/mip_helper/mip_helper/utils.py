@@ -30,3 +30,11 @@ def exit_on_error():
     exit_on_error = get_boolean_param(parameters, EXIT_ON_ERROR_PARAM, DEFAULT_EXIT_ON_ERROR)
     if exit_on_error:
         sys.exit(1)
+
+
+def is_nominal(var):
+    return var['type']['name'] in ['binominal', 'polynominal']
+
+
+def is_integer(var):
+    return var['type']['name'] in ['integer']

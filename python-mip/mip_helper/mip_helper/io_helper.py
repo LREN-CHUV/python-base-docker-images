@@ -106,7 +106,7 @@ def get_param(params_list, param_name, type, default_value):
             try:
                 return type(p["value"])
             except ValueError:
-                logging.info('%s cannot be caset as %s' % (p['value'], str(type)))
+                logging.info('%s cannot be cast as %s' % (p['value'], str(type)))
     logging.info("Using default value of parameter %s: %s" % (param_name, default_value))
     return type(default_value)
 
