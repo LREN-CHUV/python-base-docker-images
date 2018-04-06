@@ -10,6 +10,8 @@ EXIT_ON_ERROR_PARAM = "exit_on_error"
 DEFAULT_EXIT_ON_ERROR = True
 
 
+# TODO: move it to io_helper and build the dataframe directly from sql result
+# Rename to fetch_dataframe
 def create_dataframe(variables):
     """Create dataframe from variables.
     :param vars: indep_vars or [dep_var] from `fetch_data`

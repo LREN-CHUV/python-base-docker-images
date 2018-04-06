@@ -56,6 +56,7 @@ def fetch_data():
     return inputs
 
 
+@DeprecationWarning
 def fetch_parameters():
     """Get parameters from env variables."""
     return _get_parameters()
@@ -99,34 +100,6 @@ def get_results(job_id=None, node=None):
     return job_result
 
 
-def get_param(params_list, param_name, type, default_value):
-    """Extract param and convert it into proper type."""
-    for p in params_list:
-        if p["name"] == param_name:
-            try:
-                return type(p["value"])
-            except ValueError:
-                logging.info('%s cannot be cast as %s' % (p['value'], str(type)))
-    logging.info("Using default value of parameter %s: %s" % (param_name, default_value))
-    return type(default_value)
-
-
-def get_boolean_param(params_list, param_name, default_value):
-    """Extract boolean parameter from input['parameters'].
-    :param params_list: input['parameters']
-    :param param_name:
-    :param default_value:
-    """
-    for p in params_list:
-        if p["name"] == param_name:
-            try:
-                return p["value"].lower() in ("yes", "true", "t", "1")
-            except ValueError:
-                logging.warning("%s cannot be cast to boolean !")
-    logging.info("Using default value: %s for %s" % (default_value, param_name))
-    return default_value
-
-
 # *********************************************************************************************************************
 # Private functions
 # *********************************************************************************************************************
@@ -149,6 +122,7 @@ def _get_series(raw_data, var_code):
     return [None if np.isreal(s) and s is not None and np.isnan(s) else s for s in series]
 
 
+@DeprecationWarning
 def _get_parameters():
     param_prefix = "MODEL_PARAM_"
     research_pattern = param_prefix + ".*"
