@@ -56,6 +56,11 @@ def fetch_data():
     return inputs
 
 
+def fetch_parameters():
+    """Get parameters from env variables."""
+    return _get_parameters()
+
+
 def save_results(pfa, error, shape):
     """
     Store algorithm results in the output DB. Update results if it already exists.
@@ -92,6 +97,34 @@ def get_results(job_id=None, node=None):
     session.close()
 
     return job_result
+
+
+def get_param(params_list, param_name, type, default_value):
+    """Extract param and convert it into proper type."""
+    for p in params_list:
+        if p["name"] == param_name:
+            try:
+                return type(p["value"])
+            except ValueError:
+                logging.info('%s cannot be caset as %s' % (p['value'], str(type)))
+    logging.info("Using default value of parameter %s: %s" % (param_name, default_value))
+    return type(default_value)
+
+
+def get_boolean_param(params_list, param_name, default_value):
+    """Extract boolean parameter from input['parameters'].
+    :param params_list: input['parameters']
+    :param param_name:
+    :param default_value:
+    """
+    for p in params_list:
+        if p["name"] == param_name:
+            try:
+                return p["value"].lower() in ("yes", "true", "t", "1")
+            except ValueError:
+                logging.warning("%s cannot be cast to boolean !")
+    logging.info("Using default value: %s for %s" % (default_value, param_name))
+    return default_value
 
 
 # *********************************************************************************************************************
