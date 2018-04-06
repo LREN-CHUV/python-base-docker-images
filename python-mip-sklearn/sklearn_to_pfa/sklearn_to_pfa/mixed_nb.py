@@ -18,6 +18,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score
 from scipy.misc import logsumexp
 
 
@@ -105,3 +106,6 @@ class MixedNB(BaseEstimator, ClassifierMixin):
     def predict(self, X):
         probs = self.predict_proba(X)
         return self.classes_[np.argmax(probs, 1)]
+
+    def score(self, X, y, sample_weight=None):
+        return accuracy_score(y, self.predict(X), sample_weight=sample_weight)

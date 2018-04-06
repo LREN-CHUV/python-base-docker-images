@@ -306,3 +306,17 @@ def test_estimator_to_pfa_gradientboostingclassifier():
     pfa_pred = _predict_pfa(X, types, pfa)
 
     assert all(estimator_pred == pfa_pred)
+
+
+def test_estimator_to_pfa_gradientboostingclassifier_nosplits():
+    X, y, types = _classification_task()
+
+    # `min_samples_split` guarantees there will be no splits
+    estimator = _gradientboostingclassifier(X, y, min_samples_split=1000000, n_estimators=10, learning_rate=0.1)
+
+    pfa = sklearn_to_pfa(estimator, types)
+
+    estimator_pred = estimator.predict(X)
+    pfa_pred = _predict_pfa(X, types, pfa)
+
+    assert all(estimator_pred == pfa_pred)

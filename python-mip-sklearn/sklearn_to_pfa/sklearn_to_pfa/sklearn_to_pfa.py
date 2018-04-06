@@ -617,7 +617,19 @@ action:
 
 def make_tree(tree, node_id=0):
     if tree.children_left[node_id] == sklearn.tree._tree.TREE_LEAF:
-        return {'double': float(tree.value[node_id][0, 0])}
+        leaf_value = float(tree.value[node_id][0, 0])
+
+        # special case for empty tree with just root
+        if node_id == 0:
+            return {'TreeNode': {
+                'feature': 0,
+                'operator': '<=',
+                'value': 0.,
+                'pass': {'double': leaf_value},
+                'fail': {'double': leaf_value}
+            }}
+        else:
+            return {'double': leaf_value}
 
     return {'TreeNode': {
         'feature': int(tree.feature[node_id]),
