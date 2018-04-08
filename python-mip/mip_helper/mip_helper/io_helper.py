@@ -11,6 +11,7 @@ import numpy as np
 from sqlalchemy.exc import ProgrammingError
 
 from .models import JobResult
+from .utils import is_nominal
 
 
 # *********************************************************************************************************************
@@ -60,6 +61,30 @@ def fetch_data():
 def fetch_parameters():
     """Get parameters from env variables."""
     return _get_parameters()
+
+
+def fetch_dataframe(variables=None, include_dependent_var=True):
+    """Build the dataframe from sql result.
+    :param variables: independent or depedent variables from `fetch_data`. If None, fetch data implicitly
+    :param include_dependent_var: include dependent variable, only works when `inputs` is None
+    :return: dataframe with data from all variables
+    """
+    if not variables:
+        inputs = fetch_data()
+        variables = inputs["data"]["independent"]
+        if include_dependent_var:
+            variables.append(inputs["data"]["dependent"][0])
+
+    df = {}
+    for var in variables:
+        # categorical variable - we need to add all categories to make one-hot encoding work right
+        if is_nominal(var):
+            df[var['name']] = pd.Categorical(var['series'], categories=var['type']['enumeration'])
+        else:
+            # infer type automatically
+            df[var['name']] = var['series']
+    X = pd.DataFrame(df)
+    return X
 
 
 def save_results(pfa, error, shape):
