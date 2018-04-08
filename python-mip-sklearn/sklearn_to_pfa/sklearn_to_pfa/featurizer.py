@@ -27,7 +27,13 @@ class Featurizer:
         self.transforms = transforms
 
     def transform(self, data):
+        """Transform input data."""
         return np.hstack([tf.transform(data) for tf in self.transforms])
+
+    @property
+    def columns(self):
+        """Return column names."""
+        return [c for tf in self.transforms for c in tf.columns]
 
     def generate_pretty_pfa(self):
         """Generate string for PrettyPFA that converts input to array of doubles."""
@@ -42,6 +48,7 @@ a.flatten(new(array(array(double)),
 class Transform:
     """Transform implements methods `transform` and `pfa`.
     transform: X -> 2dim array
+    columns: returns column names
     pfa: generates PrettyPFA code
     """
 
@@ -54,6 +61,10 @@ class Standardize(Transform):
         self.col = col
         self.mu = mu
         self.sigma = sigma
+
+    @property
+    def columns(self):
+        return [self.col]
 
     def transform(self, X):
         return ((X[self.col] - self.mu) / self.sigma)[:, np.newaxis]
@@ -69,6 +80,10 @@ class OneHotEncoding(Transform):
     def __init__(self, col, enumerations):
         self.col = col
         self.enumerations = enumerations
+
+    @property
+    def columns(self):
+        return ['{}_{}'.format(self.col, e) for e in self.enumerations]
 
     def transform(self, X):
         Y = np.zeros((len(X), len(self.enumerations)))

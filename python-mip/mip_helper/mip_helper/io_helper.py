@@ -2,7 +2,7 @@
 
 import logging
 import sqlalchemy
-import pandas
+import pandas as pd
 import os
 import datetime
 import re
@@ -11,6 +11,7 @@ import numpy as np
 from sqlalchemy.exc import ProgrammingError
 
 from .models import JobResult
+from .utils import is_nominal
 
 
 # *********************************************************************************************************************
@@ -41,7 +42,7 @@ def fetch_data():
     metadata = _get_metadata()
 
     try:
-        df = pandas.read_sql_query(_get_query(), engine)
+        df = pd.read_sql_query(_get_query(), engine)
         raw_data = df.to_dict('list')
         data['dependent'] = [_format_variable(var, raw_data, metadata)] if var else []
         data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
@@ -54,6 +55,36 @@ def fetch_data():
     inputs = {'data': data, 'parameters': parameters}
 
     return inputs
+
+
+@DeprecationWarning
+def fetch_parameters():
+    """Get parameters from env variables."""
+    return _get_parameters()
+
+
+def fetch_dataframe(variables=None, include_dependent_var=True):
+    """Build the dataframe from sql result.
+    :param variables: independent or depedent variables from `fetch_data`. If None, fetch data implicitly
+    :param include_dependent_var: include dependent variable, only works when `inputs` is None
+    :return: dataframe with data from all variables
+    """
+    if not variables:
+        inputs = fetch_data()
+        variables = inputs["data"]["independent"]
+        if include_dependent_var:
+            variables.append(inputs["data"]["dependent"][0])
+
+    df = {}
+    for var in variables:
+        # categorical variable - we need to add all categories to make one-hot encoding work right
+        if is_nominal(var):
+            df[var['name']] = pd.Categorical(var['series'], categories=var['type']['enumeration'])
+        else:
+            # infer type automatically
+            df[var['name']] = var['series']
+    X = pd.DataFrame(df)
+    return X
 
 
 def save_results(pfa, error, shape):
@@ -116,6 +147,7 @@ def _get_series(raw_data, var_code):
     return [None if np.isreal(s) and s is not None and np.isnan(s) else s for s in series]
 
 
+@DeprecationWarning
 def _get_parameters():
     param_prefix = "MODEL_PARAM_"
     research_pattern = param_prefix + ".*"
