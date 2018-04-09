@@ -40,7 +40,7 @@ and sets up a _FUNCTION_ environment variable containing the algorithm name (see
 ### Dockerfile example
 
 ```
-FROM hbpmip/python-mip-sklearn:0.3.1
+FROM hbpmip/python-mip-sklearn:0.3.2
 
 ENV FUNCTION python-sgdregress
 
