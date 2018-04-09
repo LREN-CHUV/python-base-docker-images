@@ -5,7 +5,6 @@ import sys
 
 from . import io_helper
 from .errors import UserError
-from .shapes import Shapes
 from .parameters import get_boolean_param
 
 EXIT_ON_ERROR_PARAM = "exit_on_error"
@@ -32,7 +31,7 @@ def catch_user_error(func):
             return func(*args, **kwargs)
         except UserError as e:
             logging.error(e)
-            io_helper.save_results('', str(e), Shapes.ERROR)
+            io_helper.save_error(str(e))
             exit_on_error()
 
     return wrapped
