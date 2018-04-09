@@ -1,5 +1,6 @@
 from setuptools import setup
 from setuptools import config
+from pip.req import parse_requirements
 
 conf_dict = config.read_configuration('setup.cfg')
 
