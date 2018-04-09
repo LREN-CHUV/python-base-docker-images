@@ -46,7 +46,7 @@ select_part() {
 
 git pull --tags
 # Look for a version tag in Git. If not found, ask the user to provide one
-[ $(git tag --points-at HEAD | grep python-mip-sklearn | wc -l) == 1 ] || (
+[ $(git tag --points-at HEAD | grep sklearn-to-pfa | wc -l) == 1 ] || (
   latest_version=$(bumpversion --dry-run --list patch | grep current_version | sed -r s,"^.*=",, || echo '0.0.1')
   echo
   echo "Current commit has not been tagged with a version. Latest known version is $latest_version."
