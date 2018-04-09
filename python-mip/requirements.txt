@@ -1,1 +1,7 @@
-mip_helper==0.4.0
+# NOTE: `mip_helper` is installed in Dockerfile for faster iterations, when we get to a stable version
+# we can install mip_helper directly from pypi and comment requirements below
+# mip_helper==0.5.1
+psycopg2-binary==2.7.4
+sqlalchemy==1.2.5
+numpy==1.14.2
+pandas==0.22.0
