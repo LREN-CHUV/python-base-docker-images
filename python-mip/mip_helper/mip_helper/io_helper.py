@@ -7,6 +7,7 @@ import os
 import datetime
 import re
 import json
+import warnings
 import numpy as np
 from sqlalchemy.exc import ProgrammingError
 
@@ -57,9 +58,9 @@ def fetch_data():
     return inputs
 
 
-@DeprecationWarning
 def fetch_parameters():
     """Get parameters from env variables."""
+    warnings.warn('Deprecated, use mip_helper.paramaters.fetch_parameters', DeprecationWarning)
     return _get_parameters()
 
 
@@ -147,8 +148,8 @@ def _get_series(raw_data, var_code):
     return [None if np.isreal(s) and s is not None and np.isnan(s) else s for s in series]
 
 
-@DeprecationWarning
 def _get_parameters():
+    warnings.warn('Deprecated, use mip_helper.paramaters.fetch_parameters', DeprecationWarning)
     param_prefix = "MODEL_PARAM_"
     research_pattern = param_prefix + ".*"
     parameters = []
