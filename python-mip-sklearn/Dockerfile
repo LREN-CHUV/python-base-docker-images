@@ -20,7 +20,7 @@ RUN pytest tests/
 
 ## Target image
 
-FROM hbpmip/python-mip:0.5.1
+FROM hbpmip/python-mip:0.5.2
 
 COPY requirements.txt /
 COPY docker-entrypoint.sh /
