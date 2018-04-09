@@ -20,7 +20,7 @@ RUN pytest tests/
 
 ## Target image
 
-FROM hbpmip/python-mip:hbpmip/python-mip-sklearn:0.5.0
+FROM hbpmip/python-mip:hbpmip/python-mip-sklearn:0.5.1
 
 COPY requirements.txt /
 COPY docker-entrypoint.sh /
