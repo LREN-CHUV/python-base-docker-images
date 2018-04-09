@@ -25,7 +25,7 @@ def get_param(param_name, param_type, default_value):
         try:
             return param_type(params[param_name])
         except ValueError:
-            logging.info('%s cannot be cast as %s' % (p['value'], str(param_type)))
+            logging.info('%s cannot be cast as %s' % (params[param_name], str(param_type)))
     logging.info("Using default value: %s for %s" % (default_value, param_name))
     return param_type(default_value)
 
