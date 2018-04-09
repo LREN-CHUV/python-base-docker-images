@@ -24,3 +24,4 @@ class Shapes:
     VEGALITE = "application/vnd.vegalite+json"
     """ Generic Json, for other types of visualisations """
     JSON = "application/json"
+    TEXT = "text/plain"
