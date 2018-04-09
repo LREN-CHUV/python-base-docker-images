@@ -13,6 +13,7 @@ from sqlalchemy.exc import ProgrammingError
 
 from .models import JobResult
 from .utils import is_nominal
+from .shapes import Shapes
 
 
 # *********************************************************************************************************************
@@ -88,12 +89,11 @@ def fetch_dataframe(variables=None, include_dependent_var=True):
     return X
 
 
-def save_results(pfa, error, shape):
+def save_results(results, shape):
     """
-    Store algorithm results in the output DB. Update results if it already exists.
-    :param pfa: PFA formatted results
-    :param error: Error message (if any)
-    :param shape: Result shape. For example: pfa_json.
+    Store algorithm results in the output DB.
+    :param results: Results converted to a string format, for example PFA in Json
+    :param shape: Result shape. For example: pfa_json. See Shapes for a list of valid shapes.
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
@@ -102,11 +102,27 @@ def save_results(pfa, error, shape):
                    job_id=_get_job_id(),
                    node=_get_node(),
                    timestamp=datetime.datetime.utcnow(),
-                   data=pfa,
-                   error=error,
+                   data=results,
+                   error=None,
                    shape=shape,
                    function=_get_function())
 
+def save_error(error):
+    """
+    Store algorithm results in the output DB.
+    :param error: Error message
+    """
+    engine = sqlalchemy.create_engine(_get_output_db_url())
+
+    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)")
+    engine.execute(sql,
+                   job_id=_get_job_id(),
+                   node=_get_node(),
+                   timestamp=datetime.datetime.utcnow(),
+                   data=None,
+                   error=error,
+                   shape=Shapes.ERROR,
+                   function=_get_function())
 
 def get_results(job_id=None, node=None):
     """
