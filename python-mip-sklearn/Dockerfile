@@ -6,12 +6,6 @@ RUN pip install -r /requirements-dev.txt
 COPY requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-COPY sklearn_to_pfa /sklearn_to_pfa
-WORKDIR /sklearn_to_pfa
-RUN python setup.py install
-
-WORKDIR /
-
 # Unit tests for sklearn_to_pfa
 COPY sklearn_to_pfa/tests /src/tests/
 
@@ -33,15 +27,6 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends git && \
     rm -rf /tmp/* /var/tmp/* /var/cache/* /var/lib/apt/lists/*
 
-RUN pip install git+https://github.com/Marigold/hadrian.git@light#subdirectory=titus
-
-# TODO: this is only for prototyping, should be installed from pypi once it gets stable
-COPY sklearn_to_pfa /sklearn_to_pfa
-WORKDIR /sklearn_to_pfa
-RUN python setup.py install
-
-WORKDIR /
-
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="hbpmip/python-mip-sklearn" \
       org.label-schema.description="Execute Python algorithms in MIP Woken environment" \
@@ -55,18 +40,11 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.docker.dockerfile="Dockerfile" \
       org.label-schema.schema-version="1.0"
 
-RUN apt-get update
-RUN apt-get install -y git
-
 COPY requirements.txt /
 COPY docker-entrypoint.sh /
 
 RUN pip install -r /requirements.txt
 RUN pip install git+https://github.com/Marigold/hadrian.git@light#subdirectory=titus
-
-# NOTE: this is only for prototyping, should be installed from pypi once it gets stable
-COPY sklearn_to_pfa /sklearn_to_pfa
-RUN cd sklearn_to_pfa && python setup.py install
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["compute"]
