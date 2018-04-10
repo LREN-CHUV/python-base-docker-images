@@ -1,0 +1,33 @@
+types:
+    Query = record(Query,
+                   sql: string,
+                   variable: string,
+                   covariables: array(string));
+    Input = record(Input,
+    {% for name, typ in types %}
+      {{ name }}: {{ typ }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+    );
+
+    {% block types %}
+    {% endblock %}
+input: Input
+{% block output %}
+{% endblock %}
+cells:
+    // query(Query) = {};
+    {% block cells %}
+    {% endblock %}
+fcns:
+    arr = fcn(x: double -> array(double))
+        new(array(double), x);
+
+    C = fcn(x: string, categories: array(string) -> array(double))
+        a.map(categories, fcn(cat: string -> double) if(cat == x) 1 else 0);
+
+    standardize = fcn(x: double, mu: double, sigma: double -> double)
+        (x - mu) / sigma;
+action:
+    {% block action %}
+    var x = {{featurizer}};
+    {% endblock %}
