@@ -1,4 +1,4 @@
-mip_helper==0.5.3
+mip_helper==0.5.4
 sklearn_to_pfa==0.3.3
 pandas==0.22.0
 scipy==1.0.1
