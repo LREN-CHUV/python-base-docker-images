@@ -6,11 +6,6 @@ RUN pip install -r /requirements-dev.txt
 COPY requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
-# TODO: this is only for prototyping, should be installed from pypi once it gets stable
-COPY mip_helper /mip_helper
-WORKDIR /mip_helper
-RUN python setup.py install
-
 COPY tests/unit /src/tests/
 
 WORKDIR /src
@@ -28,13 +23,6 @@ COPY requirements.txt /
 COPY docker-entrypoint.sh /
 
 RUN pip install -r /requirements.txt
-
-# TODO: this is only for prototyping, should be installed from pypi once it gets stable
-COPY mip_helper /mip_helper
-WORKDIR /mip_helper
-RUN python setup.py install
-
-WORKDIR /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["compute"]

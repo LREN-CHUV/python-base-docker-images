@@ -30,6 +30,10 @@ def get_param(param_name, param_type, default_value):
     return param_type(default_value)
 
 
+# TODO: should we use name `get_parameter` or `get_param`?
+get_parameter = get_param
+
+
 def get_boolean_param(param_name, default_value):
     """Extract boolean parameter from input['parameters'].
     :param param_name:
