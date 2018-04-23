@@ -3,6 +3,7 @@
 import logging
 import re
 import os
+import warnings
 
 
 def fetch_parameters():
@@ -18,7 +19,7 @@ def fetch_parameters():
     return parameters
 
 
-def get_param(param_name, param_type, default_value):
+def get_parameter(param_name, param_type, default_value):
     """Extract param and convert it into proper type."""
     params = fetch_parameters()
     if param_name in params:
@@ -30,13 +31,19 @@ def get_param(param_name, param_type, default_value):
     return param_type(default_value)
 
 
-# TODO: should we use name `get_parameter` or `get_param`?
-get_parameter = get_param
+def get_param(*args, **kwargs):
+    warnings.warn('Deprecated, use get_parameters instead', DeprecationWarning)
+    return get_parameter(*args, **kwargs)
 
 
-def get_boolean_param(param_name, default_value):
+def get_boolean_parameter(param_name, default_value):
     """Extract boolean parameter from input['parameters'].
     :param param_name:
     :param default_value:
     """
     return get_param(param_name, bool, default_value)
+
+
+def get_boolean_param(*args, **kwargs):
+    warnings.warn('Deprecated, use get_boolean_parameter instead', DeprecationWarning)
+    return get_boolean_parameter(*args, **kwargs)

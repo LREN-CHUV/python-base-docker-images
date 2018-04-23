@@ -2,13 +2,16 @@
 
 import logging
 import sys
+from raven import Client
 
-from . import io_helper
 from .errors import UserError
-from .parameters import get_boolean_param
+from .parameters import get_boolean_parameter
 
 EXIT_ON_ERROR_PARAM = "exit_on_error"
 DEFAULT_EXIT_ON_ERROR = True
+
+# NOTE: set env SENTRY_DSN to send errors to sentry
+sentry_client = Client()
 
 
 def remove_nulls(X, errors='raise'):
@@ -31,15 +34,19 @@ def catch_user_error(func):
             return func(*args, **kwargs)
         except UserError as e:
             logging.error(e)
+            from . import io_helper
             io_helper.save_error(str(e))
             exit_on_error()
+        except Exception as e:
+            sentry_client.captureException()
+            raise e
 
     return wrapped
 
 
 def exit_on_error():
     """Return exit code 1 if env `exit_on_error` is True. """
-    exit_on_error = get_boolean_param(EXIT_ON_ERROR_PARAM, DEFAULT_EXIT_ON_ERROR)
+    exit_on_error = get_boolean_parameter(EXIT_ON_ERROR_PARAM, DEFAULT_EXIT_ON_ERROR)
     if exit_on_error:
         sys.exit(1)
 
