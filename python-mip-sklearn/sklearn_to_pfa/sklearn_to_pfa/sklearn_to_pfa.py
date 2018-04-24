@@ -330,12 +330,13 @@ action:
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
+    logprior = np.maximum(estimator.class_log_prior_, -1e10)
     pfa['cells']['classes']['init'] = list(estimator.classes_)
     pfa['cells']['model']['init'] = [
         {
             'logLikelihoods': ll.tolist(),
             'logPrior': log_prior.tolist()
-        } for log_prior, ll in zip(estimator.class_log_prior_, np.exp(estimator.feature_log_prob_))
+        } for log_prior, ll in zip(logprior, np.exp(estimator.feature_log_prob_))
     ]
 
     return pfa
@@ -384,6 +385,7 @@ action:
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
 
     # add model from scikit-learn
+    prior = np.maximum(estimator.class_prior_, 1e-10)
     pfa['cells']['classes']['init'] = list(estimator.classes_)
     pfa['cells']['model']['init'] = [
         {
@@ -392,7 +394,7 @@ action:
                 'variance': s
             } for m, s in zip(means, sigmas)],
             'logPrior': np.log(prior).tolist()
-        } for prior, means, sigmas in zip(estimator.class_prior_, estimator.theta_, estimator.sigma_)
+        } for prior, means, sigmas in zip(prior, estimator.theta_, estimator.sigma_)
     ]
 
     return pfa
@@ -454,7 +456,9 @@ action:
 
     # add model from scikit-learn
     pfa['cells']['classes']['init'] = list(estimator.classes_)
-    pfa['cells']['logPrior']['init'] = estimator.class_log_prior_.tolist()
+    # avoid null values from log prior
+    logprior = np.maximum(estimator.class_log_prior_, -1e10)
+    pfa['cells']['logPrior']['init'] = logprior.tolist()
 
     # assumes that continuous features go before nominal ones
     if hasattr(estimator.gauss_nb, 'theta_'):

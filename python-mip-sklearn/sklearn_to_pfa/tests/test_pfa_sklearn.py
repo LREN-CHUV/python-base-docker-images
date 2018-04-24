@@ -238,6 +238,23 @@ def test_estimator_to_pfa_mixednb(dtypes):
     assert all(estimator_pred == pfa_pred)
 
 
+def test_estimator_to_pfa_mixednb_zero_prior():
+    """Check that converted PFA is giving the same results as MultinomialNB with category that has no values."""
+    dtypes = 'ccn'
+    X, y, types = _classification_task(n_features=3, dtypes=dtypes)
+    y[:] = 'a'
+
+    is_nominal = [t == 'n' for t in dtypes]
+    estimator = _mixednb(X, y, is_nominal=is_nominal, classes=['a', 'b', 'c'])
+
+    pfa = sklearn_to_pfa(estimator, types)
+
+    estimator_pred = estimator.predict(X)
+    pfa_pred = _predict_pfa(X, types, pfa)
+
+    assert all(estimator_pred == pfa_pred)
+
+
 def test_estimator_to_pfa_kmeans():
     """Check that converted PFA is giving the same results as KMeans"""
     X, _, types = _classification_task()
