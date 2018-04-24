@@ -93,9 +93,9 @@ class MixedNB(BaseEstimator, ClassifierMixin):
     @property
     def class_log_prior_(self):
         if hasattr(self.multi_nb, 'class_log_prior_'):
-            return self.multi_nb.class_log_prior_
+            return np.maximum(self.multi_nb.class_log_prior_, -1e10)
         else:
-            return np.log(self.gauss_nb.class_prior_)
+            return np.maximum(np.log(self.gauss_nb.class_prior_), -1e10)
 
     def predict_proba(self, X):
         loglike = self._multi_joint_log_likelihood(X) + self._gauss_joint_log_likelihood(X) + self.class_log_prior_
