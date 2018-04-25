@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
+import traceback
 import sys
 from raven import Client
 
@@ -38,6 +39,8 @@ def catch_user_error(func):
             io_helper.save_error(str(e))
             exit_on_error()
         except Exception as e:
+            from . import io_helper
+            io_helper.save_error(traceback.format_exc())
             sentry_client.captureException()
             raise e
 
