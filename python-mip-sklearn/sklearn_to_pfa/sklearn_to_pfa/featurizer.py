@@ -55,7 +55,27 @@ class Transform:
     pass
 
 
+class DummyTransform(Transform):
+    """Transform that does nothing and only casts input to double."""
+
+    def __init__(self, col):
+        self.col = col
+
+    @property
+    def columns(self):
+        return [self.col]
+
+    def transform(self, X):
+        return X[[self.col]]
+
+    def pfa(self):
+        return 'u.arr(cast.double(input.{col}))'.format(
+            col=self.col
+        )
+
+
 class Standardize(Transform):
+    """Standardize data by specified mean and standard deviation."""
 
     def __init__(self, col, mu, sigma):
         self.col = col
