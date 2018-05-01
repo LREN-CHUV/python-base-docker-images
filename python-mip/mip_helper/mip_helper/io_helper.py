@@ -120,7 +120,7 @@ def save_error(error):
                    node=_get_node(),
                    timestamp=datetime.datetime.utcnow(),
                    data=None,
-                   error=error,
+                   error=str(error)[:255],
                    shape=Shapes.ERROR,
                    function=_get_function())
 
