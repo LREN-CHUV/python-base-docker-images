@@ -23,6 +23,8 @@ def round_dict(d, precision=3):
         return [round_dict(v) for v in d]
     elif isinstance(d, tuple):
         return tuple([round_dict(v) for v in d])
+    elif isinstance(d, float):
+        return round(d, precision)
 
     return d
 

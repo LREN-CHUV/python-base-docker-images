@@ -114,13 +114,19 @@ def save_error(error):
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
+    # truncate error to last 256 chars
+    error = str(error)
+    if len(error) >= 256:
+        logging.warning("Truncating error for type character varying(256). Full error: \n{}".format(error))
+        error = error[-255:]
+
     sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)")
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
                    timestamp=datetime.datetime.utcnow(),
                    data=None,
-                   error=str(error)[:255],
+                   error=error,
                    shape=Shapes.ERROR,
                    function=_get_function())
 
