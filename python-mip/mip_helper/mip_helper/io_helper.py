@@ -14,6 +14,7 @@ from sqlalchemy.exc import ProgrammingError
 from .models import JobResult
 from .utils import is_nominal
 from .shapes import Shapes
+from .parameters import fetch_parameters as fetch_model_parameters
 
 
 # *********************************************************************************************************************
@@ -61,7 +62,7 @@ def fetch_data():
 
 def fetch_parameters():
     """Get parameters from env variables."""
-    warnings.warn('Deprecated, use mip_helper.paramaters.fetch_parameters', DeprecationWarning)
+    warnings.warn('Deprecated, use mip_helper.parameters.fetch_parameters', DeprecationWarning)
     return _get_parameters()
 
 
@@ -339,4 +340,5 @@ def _get_algorithm_parameters():
         'query': _get_query(),
         'variables': _get_var(),
         'covariables': _get_covars(),
+        'model_parameters': fetch_model_parameters()
     }
