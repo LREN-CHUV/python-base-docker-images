@@ -97,7 +97,7 @@ def save_results(results, shape):
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
-    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)")
+    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters)")
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
@@ -105,7 +105,8 @@ def save_results(results, shape):
                    data=results,
                    error=None,
                    shape=shape,
-                   function=_get_function())
+                   function=_get_function(),
+                   parameters=json.dumps(_get_algorithm_parameters()))
 
 def save_error(error):
     """
@@ -116,7 +117,7 @@ def save_error(error):
 
     error = str(error)
 
-    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function)")
+    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters)")
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
@@ -124,7 +125,8 @@ def save_error(error):
                    data=None,
                    error=error,
                    shape=Shapes.ERROR,
-                   function=_get_function())
+                   function=_get_function(),
+                   parameters=json.dumps(_get_algorithm_parameters()))
 
 def get_results(job_id=None, node=None):
     """
@@ -167,7 +169,7 @@ def _get_series(raw_data, var_code):
 
 
 def _get_parameters():
-    warnings.warn('Deprecated, use mip_helper.paramaters.fetch_parameters', DeprecationWarning)
+    warnings.warn('Deprecated, use mip_helper.parameters.fetch_parameters', DeprecationWarning)
     param_prefix = "MODEL_PARAM_"
     research_pattern = param_prefix + ".*"
     parameters = []
@@ -297,7 +299,8 @@ def _get_var():
     except KeyError:
         logging.warning("Cannot read dependent variables from environment variable PARAM_variables")
 
-
+# TODO (LC): why grouping is not available separately? It's present to separate categorical variables and may
+# convey the intent of the user to request specific groupings. I agree that the semantics of this field is quite fuzzy...
 def _get_covars():
     try:
         covars = os.environ['PARAM_covariables']
@@ -329,3 +332,11 @@ def _get_function():
         return os.environ['FUNCTION']
     except KeyError:
         logging.warning("Cannot read function from environment variable FUNCTION")
+
+def _get_algorithm_parameters():
+    # Don't keep the metadata, it can always be reconstructed from the list of variables and it can grow quite large
+    return {
+        'query': _get_query(),
+        'variables': _get_var(),
+        'covariables': _get_covars(),
+    }
