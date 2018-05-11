@@ -9,6 +9,7 @@ import re
 import json
 import warnings
 import numpy as np
+from collections import OrderedDict
 from sqlalchemy.exc import ProgrammingError
 
 from .models import JobResult
@@ -75,9 +76,9 @@ def fetch_dataframe(variables=None, include_dependent_var=True):
         inputs = fetch_data()
         variables = inputs["data"]["independent"]
         if include_dependent_var:
-            variables.append(inputs["data"]["dependent"][0])
+            variables = variables + inputs["data"]["dependent"]
 
-    df = {}
+    df = OrderedDict()
     for var in variables:
         # categorical variable - we need to add all categories to make one-hot encoding work right
         if is_nominal(var):
@@ -107,6 +108,7 @@ def save_results(results, shape):
                    shape=shape,
                    function=_get_function())
 
+
 def save_error(error):
     """
     Store algorithm results in the output DB.
@@ -129,6 +131,7 @@ def save_error(error):
                    error=error,
                    shape=Shapes.ERROR,
                    function=_get_function())
+
 
 def get_results(job_id=None, node=None):
     """
