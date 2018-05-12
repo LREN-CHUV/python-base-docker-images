@@ -39,6 +39,7 @@ def catch_user_error(func):
             io_helper.save_error(str(e))
             exit_on_error()
         except Exception as e:
+            logging.exception(e)
             from . import io_helper
             io_helper.save_error(traceback.format_exc())
             sentry_client.captureException()
