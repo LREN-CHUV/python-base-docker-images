@@ -15,6 +15,7 @@ from sqlalchemy.orm import sessionmaker
 
 from .models import JobResult
 from .utils import is_nominal
+from .errors import UserError
 from .shapes import Shapes
 from .parameters import fetch_parameters as fetch_model_parameters
 from .errors import UserError
@@ -89,15 +90,22 @@ def fetch_dataframe(variables=None, include_dependent_var=True):
     return X
 
 
-def save_results(results, shape):
+def save_results(results, shape, result_name='', result_title=None):
     """
     Store algorithm results in the output DB.
     :param results: Results converted to a string format, for example PFA in Json
     :param shape: Result shape. For example: pfa_json. See Shapes for a list of valid shapes.
+    :param result_name: Use when storing multiple outputs. Has to be unique for each output
+    :param result_title: Use when storing multiple outputs.
     """
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
-    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters)")
+    sql = sqlalchemy.text("""
+        INSERT INTO job_result
+        (job_id, node, timestamp, data, error, shape, function, parameters, result_name, result_title)
+        VALUES
+        (:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters, :result_name, :result_title)
+    """)
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
@@ -105,6 +113,30 @@ def save_results(results, shape):
                    data=results,
                    error=None,
                    shape=shape,
+                   function=_get_function(),
+                   parameters=json.dumps(_get_algorithm_parameters()),
+                   result_name=result_name,
+                   result_title=result_title,
+                   )
+
+
+def results_complete():
+    """
+    Signal that saving multiple results has completed.
+    """
+    engine = sqlalchemy.create_engine(_get_output_db_url())
+
+    sql = sqlalchemy.text("""
+        INSERT INTO job_result
+        (job_id, node, timestamp, shape, function, parameters)
+        VALUES
+        (:job_id, :node, :timestamp, :shape, :function, :parameters)
+    """)
+    engine.execute(sql,
+                   job_id=_get_job_id(),
+                   node=_get_node(),
+                   timestamp=datetime.datetime.utcnow(),
+                   shape=Shapes.WORK_COMPLETE,
                    function=_get_function(),
                    parameters=json.dumps(_get_algorithm_parameters()))
 
@@ -118,22 +150,29 @@ def save_error(error):
 
     error = str(error)
 
-    sql = sqlalchemy.text("INSERT INTO job_result VALUES(:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters)")
+    sql = sqlalchemy.text("""
+        INSERT INTO job_result
+        (job_id, node, timestamp, error, shape, function, parameters)
+        VALUES
+        (:job_id, :node, :timestamp, :error, :shape, :function, :parameters)
+    """)
     engine.execute(sql,
                    job_id=_get_job_id(),
                    node=_get_node(),
                    timestamp=datetime.datetime.utcnow(),
-                   data=None,
                    error=error,
                    shape=Shapes.ERROR,
                    function=_get_function(),
                    parameters=json.dumps(_get_algorithm_parameters()))
 
 
-def get_results(job_id=None, node=None):
+def get_results(job_id=None, node=None, multiple_results=False):
     """
     Return job result as a dictionary if exists. Return None if it does not exist.
     :param job_id: Job ID
+    :param node: Node ID
+    :param multiple_results: If true, return all results in list for given job ID and node. If False, return single
+        result and raise error if more than one is found.
     """
     assert isinstance(job_id, str)
 
@@ -143,13 +182,28 @@ def get_results(job_id=None, node=None):
     session = Session()
 
     job_id = job_id or _get_job_id()
+    if not isinstance(job_id, str):
+        raise UserError('Job ID must be string, not {}'.format(type(job_id)))
+    if node is not None and not isinstance(node, str):
+        raise UserError('Node must be string, not {}'.format(type(node)))
+
+    job_id = job_id or _get_job_id()
     if (node):
-        job_result = session.query(JobResult).filter_by(job_id=job_id, node=node).first()
+        job_results = session.query(JobResult).filter_by(job_id=job_id, node=node).all()
     else:
-        job_result = session.query(JobResult).filter_by(job_id=job_id).first()
+        job_results = session.query(JobResult).filter_by(job_id=job_id).all()
     session.close()
 
-    return job_result
+    if multiple_results:
+        return job_results
+    else:
+        if len(job_results) > 1:
+            raise UserError('Multiple results found for {}/{}, use `multiple_results` param.'.format(job_id, node))
+        elif len(job_results) == 1:
+            return job_results[0]
+        else:
+            return None
+
 
 def load_intermediate_json_results(job_ids):
     """

@@ -25,3 +25,5 @@ class Shapes:
     """ Generic Json, for other types of visualisations """
     JSON = "application/json"
     TEXT = "text/plain"
+    """ Signal that saving multiple results has completed """
+    WORK_COMPLETE = "work_complete"
