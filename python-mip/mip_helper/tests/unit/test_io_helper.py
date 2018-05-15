@@ -47,6 +47,15 @@ ENVIRON = {
     'PARAM_meta': META,
 }
 
+PARAMETERS = json.dumps(
+    {
+        "query": "SELECT lefthippocampus, subjectageyears FROM features",
+        "variables": "lefthippocampus",
+        "covariables": ["subjectageyears"],
+        "model_parameters": {}
+    }
+)
+
 
 @contextmanager
 def mock_engine():
@@ -132,7 +141,10 @@ def test_save_results():
         'data': '{"a": "b"}',
         'error': None,
         'shape': 'application/json',
-        'function': None
+        'function': None,
+        'result_name': '',
+        'result_title': None,
+        'parameters': PARAMETERS,
     }
 
 
@@ -146,10 +158,10 @@ def test_save_error():
         'job_id': None,
         'node': None,
         'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
-        'data': None,
         'error': 'mytest',
         'shape': 'text/plain+error',
-        'function': None
+        'function': None,
+        'parameters': PARAMETERS
     }
 
 
