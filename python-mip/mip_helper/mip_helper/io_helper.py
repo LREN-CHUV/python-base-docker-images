@@ -143,8 +143,10 @@ def get_results(job_id=None, node=None):
 
     session = Session()
     job_id = job_id or _get_job_id()
-    node = node or _get_node()
-    job_result = session.query(JobResult).filter_by(job_id=job_id, node=node).first()
+    if (node):
+        job_result = session.query(JobResult).filter_by(job_id=job_id, node=node).first()
+    else:
+        job_result = session.query(JobResult).filter_by(job_id=job_id).first()
     session.close()
 
     return job_result
