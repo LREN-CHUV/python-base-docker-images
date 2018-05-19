@@ -31,11 +31,16 @@ META = json.dumps(
 )
 
 ENVIRON = {
+    'JOB_ID': '1',
+    'NODE': 'test',
+    'FUNCTION': 'unit-test',
+    'OUT_DBAPI_DRIVER': 'postgresql',
     'OUT_HOST': 'db',
     'OUT_PORT': '5432',
     'OUT_DATABASE': 'postgres',
     'OUT_USER': 'postgres',
     'OUT_PASSWORD': 'pwd',
+    'IN_DBAPI_DRIVER': 'postgresql',
     'IN_HOST': 'db',
     'IN_PORT': '5432',
     'IN_DATABASE': 'postgres',
@@ -126,13 +131,14 @@ def test_save_results():
         save_results(results, Shapes.JSON)
 
     assert engine.execute.call_args[1] == {
-        'job_id': None,
-        'node': None,
+        'job_id': '1',
+        'node': 'test',
         'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
         'data': '{"a": "b"}',
         'error': None,
         'shape': 'application/json',
-        'function': None
+        'function': 'unit-test',
+        'parameters': '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
     }
 
 
@@ -143,13 +149,14 @@ def test_save_error():
         save_error(error)
 
     assert engine.execute.call_args[1] == {
-        'job_id': None,
-        'node': None,
+        'job_id': '1',
+        'node': 'test',
         'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
         'data': None,
         'error': 'mytest',
         'shape': 'text/plain+error',
-        'function': None
+        'function': 'unit-test',
+        'parameters': '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
     }
 
 

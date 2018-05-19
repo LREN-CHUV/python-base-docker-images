@@ -9,7 +9,7 @@ RUN pip install -r /requirements.txt
 COPY mip_helper/tests/unit /src/tests/
 
 WORKDIR /src
-RUN pytest tests/
+RUN pytest -x --ff --capture=no -vv tests/
 
 FROM hbpmip/python-base:0.3.0
 
