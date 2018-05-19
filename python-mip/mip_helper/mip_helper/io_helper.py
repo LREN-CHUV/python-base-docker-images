@@ -16,7 +16,7 @@ from .models import JobResult
 from .utils import is_nominal
 from .shapes import Shapes
 from .parameters import fetch_parameters as fetch_model_parameters
-
+from .errors import UserError
 
 # *********************************************************************************************************************
 # Initialization
@@ -24,9 +24,6 @@ from .parameters import fetch_parameters as fetch_model_parameters
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-# Init sessionmaker
-Session = sqlalchemy.orm.sessionmaker()
 
 
 # *********************************************************************************************************************
@@ -132,16 +129,18 @@ def save_error(error):
                    parameters=json.dumps(_get_algorithm_parameters()))
 
 
-def get_results(job_id=None, node=None):
+def get_results(job_id=None, node=None, session=None):
     """
     Return job result as a dictionary if exists. Return None if it does not exist.
     :param job_id: Job ID
     """
     assert isinstance(job_id, str)
-    engine = sqlalchemy.create_engine(_get_output_db_url())
-    Session.configure(bind=engine)
 
-    session = Session()
+    if not session:
+        engine = sqlalchemy.create_engine(_get_output_db_url())
+        ResultsSession = sqlalchemy.orm.sessionmaker(bind=engine)
+        session = ResultsSession()
+
     job_id = job_id or _get_job_id()
     if (node):
         job_result = session.query(JobResult).filter_by(job_id=job_id, node=node).first()
@@ -151,6 +150,32 @@ def get_results(job_id=None, node=None):
 
     return job_result
 
+def load_intermediate_json_results(job_ids):
+    """
+    Load intermediate results as an array of Json objects.
+    Those results come from other nodes and have been stored in the output database by Woken.
+    :param job_ids: List of Job IDs
+    """
+
+    data = []
+    engine = sqlalchemy.create_engine(_get_output_db_url())
+    ResultsSession = sqlalchemy.orm.sessionmaker(bind=engine)
+    session = ResultsSession()
+
+    for job_id in job_ids:
+        job_result = get_results(job_id, session)
+
+        # log errors (e.g. about missing data), but do not reraise them
+        if job_result.error:
+            logging.warning(job_result.error)
+        else:
+            pfa = json.loads(job_result.data)
+            data.append(pfa)
+
+    if not data:
+        raise UserError('All jobs {} returned an error.'.format(job_ids))
+
+    return data
 
 # *********************************************************************************************************************
 # Private functions
