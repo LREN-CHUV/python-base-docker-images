@@ -96,7 +96,7 @@ Here is a complete example:
 ### Dockerfile example
 
 ```
-FROM hbpmip/python-mip:0.6.3
+FROM hbpmip/python-mip:0.6.4
 
 ENV FUNCTION python-anova
 
