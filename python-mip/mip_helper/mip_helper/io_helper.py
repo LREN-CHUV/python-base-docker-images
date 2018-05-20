@@ -11,6 +11,7 @@ import warnings
 import numpy as np
 from collections import OrderedDict
 from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.orm import sessionmaker
 
 from .models import JobResult
 from .utils import is_nominal
@@ -129,17 +130,17 @@ def save_error(error):
                    parameters=json.dumps(_get_algorithm_parameters()))
 
 
-def get_results(job_id=None, node=None, session=None):
+def get_results(job_id=None, node=None):
     """
     Return job result as a dictionary if exists. Return None if it does not exist.
     :param job_id: Job ID
     """
     assert isinstance(job_id, str)
 
-    if not session:
-        engine = sqlalchemy.create_engine(_get_output_db_url())
-        ResultsSession = sqlalchemy.orm.sessionmaker(bind=engine)
-        session = ResultsSession()
+    engine = sqlalchemy.create_engine(_get_output_db_url())
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    session = Session()
 
     job_id = job_id or _get_job_id()
     if (node):
@@ -159,11 +160,12 @@ def load_intermediate_json_results(job_ids):
 
     data = []
     engine = sqlalchemy.create_engine(_get_output_db_url())
-    ResultsSession = sqlalchemy.orm.sessionmaker(bind=engine)
-    session = ResultsSession()
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    session = Session()
 
     for job_id in job_ids:
-        job_result = get_results(job_id, session)
+        job_result = session.query(JobResult).filter_by(job_id=job_id).first()
 
         # log errors (e.g. about missing data), but do not reraise them
         if job_result.error:
