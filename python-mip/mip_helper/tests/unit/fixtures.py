@@ -7,28 +7,41 @@ def metadata():
     # all definitions
     return {
         'lefthippocampus': {
+            'description': 'Left hippocampus.',
+            'methodology': 'mip-cde',
+            'label': 'Left hippocampus',
             'code': 'lefthippocampus',
+            'units': 'mm3',
+            'length': 3,
             'type': 'real',
             'mean': 3.0,
-            'std': 0.35
+            'std': 0.35,
+            'minValue': 0.,
+            'maxValue': 10.,
         },
         'minimentalstate': {
             'code': 'minimentalstate',
             'type': 'real',
             'mean': 24.0,
-            'std': 5.0
+            'std': 5.0,
+            'minValue': 0.,
+            'maxValue': 50.,
         },
         'opticchiasm': {
             'code': 'opticchiasm',
             'type': 'real',
             'mean': 0.08,
-            'std': 0.009
+            'std': 0.009,
+            'minValue': 0.,
+            'maxValue': 1.,
         },
         'subjectage': {
             'code': 'subjectage',
             'type': 'real',
             'mean': 71.0,
-            'std': 8.0
+            'std': 8.0,
+            'minValue': 0.,
+            'maxValue': 100.,
         },
         'agegroup': {
             "code": "agegroup",

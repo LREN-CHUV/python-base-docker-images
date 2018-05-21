@@ -79,7 +79,9 @@ def test_fetch_data(mock_read_sql_query):
             'dependent': [
                 {
                     'label': 'lefthippocampus',
+                    'maxValue': 5.0,
                     'mean': 3.0,
+                    'minValue': 0.1,
                     'name': 'lefthippocampus',
                     'series': [1.0, 2.0],
                     'std': 0.35,
@@ -88,15 +90,18 @@ def test_fetch_data(mock_read_sql_query):
                     }
                 }
             ],
-            'independent':
-            [{
-                'label': 'Age Years',
-                'name': 'subjectageyears',
-                'series': [20, 30],
-                'type': {
-                    'name': 'integer'
+            'independent': [
+                {
+                    'label': 'Age Years',
+                    'maxValue': 130.0,
+                    'minValue': 0.0,
+                    'name': 'subjectageyears',
+                    'series': [20, 30],
+                    'type': {
+                        'name': 'integer'
+                    }
                 }
-            }]
+            ]
         },
         'parameters': []
     }
@@ -131,14 +136,22 @@ def test_save_results():
         save_results(results, Shapes.JSON)
 
     assert engine.execute.call_args[1] == {
-        'job_id': '1',
-        'node': 'test',
-        'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
-        'data': '{"a": "b"}',
-        'error': None,
-        'shape': 'application/json',
-        'function': 'unit-test',
-        'parameters': '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
+        'job_id':
+        '1',
+        'node':
+        'test',
+        'timestamp':
+        datetime.datetime(2018, 1, 1, 0, 0),
+        'data':
+        '{"a": "b"}',
+        'error':
+        None,
+        'shape':
+        'application/json',
+        'function':
+        'unit-test',
+        'parameters':
+        '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
     }
 
 
@@ -149,14 +162,22 @@ def test_save_error():
         save_error(error)
 
     assert engine.execute.call_args[1] == {
-        'job_id': '1',
-        'node': 'test',
-        'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
-        'data': None,
-        'error': 'mytest',
-        'shape': 'text/plain+error',
-        'function': 'unit-test',
-        'parameters': '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
+        'job_id':
+        '1',
+        'node':
+        'test',
+        'timestamp':
+        datetime.datetime(2018, 1, 1, 0, 0),
+        'data':
+        None,
+        'error':
+        'mytest',
+        'shape':
+        'text/plain+error',
+        'function':
+        'unit-test',
+        'parameters':
+        '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
     }
 
 
@@ -164,13 +185,15 @@ def test_format_variable():
     r = _format_variable('lefthippocampus', fx.data().to_dict('list'), fx.metadata())
     del r['series']
     assert r == {
+        'label': 'Left hippocampus',
+        'maxValue': 10.0,
+        'mean': 3.0,
+        'minValue': 0.0,
         'name': 'lefthippocampus',
+        'std': 0.35,
         'type': {
             'name': 'real'
-        },
-        'mean': 3.0,
-        'std': 0.35,
-        'label': 'lefthippocampus'
+        }
     }
 
     r = _format_variable('agegroup', fx.data().to_dict('list'), fx.metadata())
