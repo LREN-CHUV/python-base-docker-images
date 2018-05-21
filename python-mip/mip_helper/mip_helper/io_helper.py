@@ -189,9 +189,11 @@ def _format_variable(var_code, raw_data, vars_meta):
     var = {'name': var_code, 'type': var_type, 'series': series}
     var_meta = vars_meta[var_code]
     if var['type']['name'] in ('real', 'integer'):
-        for stat in ['mean', 'std', 'min', 'max']:
-            if stat in var_meta:
+        for stat in var_meta.keys():
+            if stat in ['mean', 'std', 'minValue', 'maxValue']:
                 var[stat] = float(var_meta[stat])
+            elif stat not in ('description', 'methodology', 'label', 'units', 'length', 'code', 'type'):
+                logging.warning('Unknown metadata field {}'.format(stat))
     var['label'] = var_meta.get('label', var_code)
     return var
 
