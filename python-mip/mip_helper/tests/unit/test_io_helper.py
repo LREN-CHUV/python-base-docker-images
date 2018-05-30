@@ -52,6 +52,15 @@ ENVIRON = {
     'PARAM_meta': META,
 }
 
+PARAMETERS = json.dumps(
+    {
+        "query": "SELECT lefthippocampus, subjectageyears FROM features",
+        "variables": "lefthippocampus",
+        "covariables": ["subjectageyears"],
+        "model_parameters": {}
+    }
+)
+
 
 @contextmanager
 def mock_engine():
@@ -136,22 +145,16 @@ def test_save_results():
         save_results(results, Shapes.JSON)
 
     assert engine.execute.call_args[1] == {
-        'job_id':
-        '1',
-        'node':
-        'test',
-        'timestamp':
-        datetime.datetime(2018, 1, 1, 0, 0),
-        'data':
-        '{"a": "b"}',
-        'error':
-        None,
-        'shape':
-        'application/json',
-        'function':
-        'unit-test',
-        'parameters':
-        '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
+        'job_id': '1',
+        'node': 'test',
+        'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
+        'data': '{"a": "b"}',
+        'error': None,
+        'shape': 'application/json',
+        'function': 'unit-test',
+        'result_name': '',
+        'result_title': None,
+        'parameters': PARAMETERS,
     }
 
 
@@ -162,22 +165,13 @@ def test_save_error():
         save_error(error)
 
     assert engine.execute.call_args[1] == {
-        'job_id':
-        '1',
-        'node':
-        'test',
-        'timestamp':
-        datetime.datetime(2018, 1, 1, 0, 0),
-        'data':
-        None,
-        'error':
-        'mytest',
-        'shape':
-        'text/plain+error',
-        'function':
-        'unit-test',
-        'parameters':
-        '{"query": "SELECT lefthippocampus, subjectageyears FROM features", "variables": "lefthippocampus", "covariables": ["subjectageyears"], "model_parameters": {}}'
+        'job_id': '1',
+        'node': 'test',
+        'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
+        'error': 'mytest',
+        'shape': 'text/plain+error',
+        'function': 'unit-test',
+        'parameters': PARAMETERS
     }
 
 
