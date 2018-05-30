@@ -88,7 +88,9 @@ def test_fetch_data(mock_read_sql_query):
             'dependent': [
                 {
                     'label': 'lefthippocampus',
+                    'maxValue': 5.0,
                     'mean': 3.0,
+                    'minValue': 0.1,
                     'name': 'lefthippocampus',
                     'series': [1.0, 2.0],
                     'std': 0.35,
@@ -97,15 +99,18 @@ def test_fetch_data(mock_read_sql_query):
                     }
                 }
             ],
-            'independent':
-            [{
-                'label': 'Age Years',
-                'name': 'subjectageyears',
-                'series': [20, 30],
-                'type': {
-                    'name': 'integer'
+            'independent': [
+                {
+                    'label': 'Age Years',
+                    'maxValue': 130.0,
+                    'minValue': 0.0,
+                    'name': 'subjectageyears',
+                    'series': [20, 30],
+                    'type': {
+                        'name': 'integer'
+                    }
                 }
-            }]
+            ]
         },
         'parameters': []
     }
@@ -174,13 +179,15 @@ def test_format_variable():
     r = _format_variable('lefthippocampus', fx.data().to_dict('list'), fx.metadata())
     del r['series']
     assert r == {
+        'label': 'Left hippocampus',
+        'maxValue': 10.0,
+        'mean': 3.0,
+        'minValue': 0.0,
         'name': 'lefthippocampus',
+        'std': 0.35,
         'type': {
             'name': 'real'
-        },
-        'mean': 3.0,
-        'std': 0.35,
-        'label': 'lefthippocampus'
+        }
     }
 
     r = _format_variable('agegroup', fx.data().to_dict('list'), fx.metadata())
