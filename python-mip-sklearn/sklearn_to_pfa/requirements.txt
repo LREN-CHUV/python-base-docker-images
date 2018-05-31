@@ -1,5 +1,6 @@
 pandas
 scipy
+jinja2==2.10
 scikit-learn
 # ligthweight version of hadrian that only contains titus package
 # git+https://github.com/Marigold/hadrian.git@light#egg=titus&subdirectory=titus
