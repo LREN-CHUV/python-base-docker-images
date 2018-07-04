@@ -142,7 +142,7 @@ def test_save_results():
     results = json.dumps({'a': 'b'})
 
     with mock_engine() as engine:
-        save_results(results, Shapes.JSON)
+        save_results(results=results, shape=Shapes.JSON)
 
     assert engine.execute.call_args[1] == {
         'job_id': '1',
@@ -154,9 +154,27 @@ def test_save_results():
         'function': 'unit-test',
         'result_name': '',
         'result_title': None,
-        'parameters': PARAMETERS,
+        'parameters': PARAMETERS
     }
 
+def test_save_results_with_name():
+    results = json.dumps({'a': 'b'})
+
+    with mock_engine() as engine:
+        save_results(results=results, shape=Shapes.JSON, result_name='t1', result_title='T1')
+
+    assert engine.execute.call_args[1] == {
+        'job_id': '1',
+        'node': 'test',
+        'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
+        'data': '{"a": "b"}',
+        'error': None,
+        'shape': 'application/json',
+        'function': 'unit-test',
+        'result_name': 't1',
+        'result_title': 'T1',
+        'parameters': PARAMETERS
+    }
 
 def test_save_error():
     error = ValueError('mytest')
