@@ -1,11 +1,11 @@
 from setuptools import setup
 from setuptools import config
-from pip.req import parse_requirements
 
 
 conf_dict = config.read_configuration('setup.cfg')
 
-REQUIRED = [str(ir.req) for ir in parse_requirements('requirements.txt', session='hack')]
+with open("requirements.txt") as reqs_file:
+    reqs = reqs_file.readlines()
 
 setup(
     name='mip_helper',
@@ -21,7 +21,7 @@ setup(
     extras_require={
         'test': ['unittest', 'nose'],
     },
-    install_requires=REQUIRED,
+    install_requires=reqs,
     include_package_data=True,
     classifiers=(
         'Intended Audience :: Developers',
