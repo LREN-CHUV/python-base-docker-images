@@ -45,14 +45,25 @@ def fetch_data():
     metadata = _get_metadata()
 
     try:
-        df = pd.read_sql_query(_get_query(), engine)
-        raw_data = df.to_dict('list')
-        data['dependent'] = [_format_variable(var, raw_data, metadata)] if var else []
-        data['independent'] = [_format_variable(v, raw_data, metadata) for v in covars]
-    except ProgrammingError as ex:
-        logging.warning("A problem occurred while querying the database, "
-                        "please ensure all the variables are available in the database: " + str(ex))
+        csv_file = os.environ["INPUT_FILE"]
+        try:
+            csv_separator = os.environ["CSV_SEPARATOR"]
+        except KeyError:
+            csv_separator = ","
 
+        df = pd.read_csv(csv_file, sep=csv_separator)
+    except KeyError:
+        try:
+            df = pd.read_sql_query(_get_query(), engine)
+        except ProgrammingError as ex:
+            logging.warning("A problem occurred while querying the database, "
+                            "please ensure all the variables are available in the database: " + str(ex))
+
+    raw_data = df.to_dict('list')
+    data['dependent'] = [_format_variable(
+        var, raw_data, metadata)] if var else []
+    data['independent'] = [_format_variable(
+        v, raw_data, metadata) for v in covars]
     parameters = _get_parameters()
 
     inputs = {'data': data, 'parameters': parameters}
@@ -62,7 +73,8 @@ def fetch_data():
 
 def fetch_parameters():
     """Get parameters from env variables."""
-    warnings.warn('Deprecated, use mip_helper.parameters.fetch_parameters', DeprecationWarning)
+    warnings.warn(
+        'Deprecated, use mip_helper.parameters.fetch_parameters', DeprecationWarning)
     return _get_parameters()
 
 
@@ -80,9 +92,11 @@ def fetch_dataframe(variables=None, include_dependent_var=True):
 
     df = OrderedDict()
     for var in variables:
-        # categorical variable - we need to add all categories to make one-hot encoding work right
+        # categorical variable - we need to add all categories to make one-hot
+        # encoding work right
         if is_nominal(var):
-            df[var['name']] = pd.Categorical(var['series'], categories=var['type']['enumeration'])
+            df[var['name']] = pd.Categorical(
+                var['series'], categories=var['type']['enumeration'])
         else:
             # infer type automatically
             df[var['name']] = var['series']
@@ -98,47 +112,25 @@ def save_results(results, shape, result_name='', result_title=None):
     :param result_name: Use when storing multiple outputs. Has to be unique for each output
     :param result_title: Use when storing multiple outputs.
     """
-    engine = sqlalchemy.create_engine(_get_output_db_url())
 
-    sql = sqlalchemy.text("""
-        INSERT INTO job_result
-        (job_id, node, timestamp, data, error, shape, function, parameters, result_name, result_title)
-        VALUES
-        (:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters, :result_name, :result_title)
-    """)
-    engine.execute(sql,
-                   job_id=_get_job_id(),
-                   node=_get_node(),
-                   timestamp=datetime.datetime.utcnow(),
-                   data=results,
-                   error=None,
-                   shape=shape,
-                   function=_get_function(),
-                   parameters=json.dumps(_get_algorithm_parameters()),
-                   result_name=result_name,
-                   result_title=result_title,
-                   )
+    try:
+        out_file = os.environ["OUTPUT_FILE"] + result_name
+        if (result_name):
+            out_file = out_file + '.' + result_name
+        os.write(out_file, str(results))
+    except KeyError:
+        _save_results_db(results, shape, result_name, result_title)
 
 
 def results_complete():
     """
     Signal that saving multiple results has completed.
     """
-    engine = sqlalchemy.create_engine(_get_output_db_url())
-
-    sql = sqlalchemy.text("""
-        INSERT INTO job_result
-        (job_id, node, timestamp, shape, function, parameters)
-        VALUES
-        (:job_id, :node, :timestamp, :shape, :function, :parameters)
-    """)
-    engine.execute(sql,
-                   job_id=_get_job_id(),
-                   node=_get_node(),
-                   timestamp=datetime.datetime.utcnow(),
-                   shape=Shapes.WORK_COMPLETE,
-                   function=_get_function(),
-                   parameters=json.dumps(_get_algorithm_parameters()))
+    try:
+        out_file = os.environ["OUTPUT_FILE"] + '.complete'
+        os.write(out_file, '')
+    except KeyError:
+        _save_results_db('', Shapes.WORK_COMPLETE)
 
 
 def save_error(error):
@@ -146,24 +138,11 @@ def save_error(error):
     Store algorithm results in the output DB.
     :param error: Error message
     """
-    engine = sqlalchemy.create_engine(_get_output_db_url())
-
-    error = str(error)
-
-    sql = sqlalchemy.text("""
-        INSERT INTO job_result
-        (job_id, node, timestamp, error, shape, function, parameters)
-        VALUES
-        (:job_id, :node, :timestamp, :error, :shape, :function, :parameters)
-    """)
-    engine.execute(sql,
-                   job_id=_get_job_id(),
-                   node=_get_node(),
-                   timestamp=datetime.datetime.utcnow(),
-                   error=error,
-                   shape=Shapes.ERROR,
-                   function=_get_function(),
-                   parameters=json.dumps(_get_algorithm_parameters()))
+    try:
+        out_file = os.environ["OUTPUT_FILE"] + '.error'
+        os.write(out_file, str(error))
+    except KeyError:
+        _save_results_db(str(error), Shapes.ERROR)
 
 
 def get_results(job_id=None, node=None, multiple_results=False):
@@ -189,7 +168,8 @@ def get_results(job_id=None, node=None, multiple_results=False):
 
     job_id = job_id or _get_job_id()
     if (node):
-        job_results = session.query(JobResult).filter_by(job_id=job_id, node=node).all()
+        job_results = session.query(JobResult).filter_by(
+            job_id=job_id, node=node).all()
     else:
         job_results = session.query(JobResult).filter_by(job_id=job_id).all()
     session.close()
@@ -198,7 +178,8 @@ def get_results(job_id=None, node=None, multiple_results=False):
         return job_results
     else:
         if len(job_results) > 1:
-            raise UserError('Multiple results found for {}/{}, use `multiple_results` param.'.format(job_id, node))
+            raise UserError(
+                'Multiple results found for {}/{}, use `multiple_results` param.'.format(job_id, node))
         elif len(job_results) == 1:
             return job_results[0]
         else:
@@ -237,6 +218,30 @@ def load_intermediate_json_results(job_ids):
 # Private functions
 # *********************************************************************************************************************
 
+
+def _save_results_db(results, shape, result_name='', result_title=None):
+    engine = sqlalchemy.create_engine(_get_output_db_url())
+
+    sql = sqlalchemy.text("""
+        INSERT INTO job_result
+        (job_id, node, timestamp, data, error, shape, function, parameters, result_name, result_title)
+        VALUES
+        (:job_id, :node, :timestamp, :data, :error, :shape, :function, :parameters, :result_name, :result_title)
+    """)
+    engine.execute(sql,
+                   job_id=_get_job_id(),
+                   node=_get_node(),
+                   timestamp=datetime.datetime.utcnow(),
+                   data=results,
+                   error=None,
+                   shape=shape,
+                   function=_get_function(),
+                   parameters=json.dumps(_get_algorithm_parameters()),
+                   result_name=result_name,
+                   result_title=result_title,
+                   )
+
+
 def _format_variable(var_code, raw_data, vars_meta):
     var_type = _get_type(var_code, vars_meta)
     series = _get_series(raw_data, var_code)
@@ -258,13 +263,15 @@ def _get_series(raw_data, var_code):
 
 
 def _get_parameters():
-    warnings.warn('Deprecated, use mip_helper.parameters.fetch_parameters', DeprecationWarning)
+    warnings.warn(
+        'Deprecated, use mip_helper.parameters.fetch_parameters', DeprecationWarning)
     param_prefix = "MODEL_PARAM_"
     research_pattern = param_prefix + ".*"
     parameters = []
     for env_var in os.environ:
         if re.fullmatch(research_pattern, env_var):
-            parameters.append({'name': env_var.split(param_prefix)[1], 'value': os.environ[env_var]})
+            parameters.append({'name': env_var.split(param_prefix)[
+                              1], 'value': os.environ[env_var]})
     return parameters
 
 
@@ -274,10 +281,12 @@ def _get_type(var_code, vars_meta):
         var_meta = vars_meta[var_code]
         type_info['name'] = var_meta.get('type', 'unknown')
         if type_info['name'] in ['polynominal', 'binominal']:
-            type_info['enumeration'] = [e['code'] for e in var_meta['enumerations']]
+            type_info['enumeration'] = [e['code']
+                                        for e in var_meta['enumerations']]
             # NOTE: enumeration could be a dictionary {'code': <code>, 'label': <label>}, this is only for
             # backward compatibility
-            type_info['enumeration_labels'] = [e['label'] for e in var_meta['enumerations']]
+            type_info['enumeration_labels'] = [e['label']
+                                               for e in var_meta['enumerations']]
     except KeyError:
         logging.warning("Cannot read meta-data for variable %s !", var_code)
         type_info['name'] = 'unknown'
@@ -288,40 +297,47 @@ def _get_input_db_url():
     try:
         dbapi = os.environ['IN_DBAPI_DRIVER']
     except KeyError:
-        logging.warning("Cannot read input DBAPI from environment variable IN_DBAPI_DRIVER")
+        logging.warning(
+            "Cannot read input DBAPI from environment variable IN_DBAPI_DRIVER")
         dbapi = "postgresql"
 
     try:
         host = os.environ['IN_HOST']
     except KeyError:
-        logging.warning("Cannot read host for input database from environment variable IN_HOST")
+        logging.warning(
+            "Cannot read host for input database from environment variable IN_HOST")
         raise
 
     try:
         port = os.environ['IN_PORT']
     except KeyError:
-        logging.warning("Cannot read port for input database from environment variable IN_PORT")
+        logging.warning(
+            "Cannot read port for input database from environment variable IN_PORT")
         raise
 
     try:
         database = os.environ['IN_DATABASE']
     except KeyError:
-        logging.warning("Cannot read name of input database from environment variable IN_DATABASE")
+        logging.warning(
+            "Cannot read name of input database from environment variable IN_DATABASE")
         raise
 
     try:
         user = os.environ['IN_USER']
     except KeyError:
-        logging.warning("Cannot read input database user from environment variable IN_USER")
+        logging.warning(
+            "Cannot read input database user from environment variable IN_USER")
         raise
 
     try:
         passwd = os.environ['IN_PASSWORD']
     except KeyError:
-        logging.warning("Cannot read input database password from environment variable IN_PASSWORD")
+        logging.warning(
+            "Cannot read input database password from environment variable IN_PASSWORD")
         raise
 
-    input_db_url = dbapi + "://" + user + ":" + passwd + "@" + host + ":" + port + "/" + database
+    input_db_url = dbapi + "://" + user + ":" + \
+        passwd + "@" + host + ":" + port + "/" + database
 
     return input_db_url
 
@@ -330,40 +346,47 @@ def _get_output_db_url():
     try:
         dbapi = os.environ['OUT_DBAPI_DRIVER']
     except KeyError:
-        logging.warning("Cannot read output DBAPI from environment variable OUT_DBAPI_DRIVER")
+        logging.warning(
+            "Cannot read output DBAPI from environment variable OUT_DBAPI_DRIVER")
         dbapi = "postgresql"
 
     try:
         host = os.environ['OUT_HOST']
     except KeyError:
-        logging.warning("Cannot read host for output database from environment variable OUT_HOST")
+        logging.warning(
+            "Cannot read host for output database from environment variable OUT_HOST")
         raise
 
     try:
         port = os.environ['OUT_PORT']
     except KeyError:
-        logging.warning("Cannot read port for output database from environment variable OUT_PORT")
+        logging.warning(
+            "Cannot read port for output database from environment variable OUT_PORT")
         raise
 
     try:
         database = os.environ['OUT_DATABASE']
     except KeyError:
-        logging.warning("Cannot read name of output database from environment variable OUT_DATABASE")
+        logging.warning(
+            "Cannot read name of output database from environment variable OUT_DATABASE")
         raise
 
     try:
         user = os.environ['OUT_USER']
     except KeyError:
-        logging.warning("Cannot read output database user from environment variable OUT_USER")
+        logging.warning(
+            "Cannot read output database user from environment variable OUT_USER")
         raise
 
     try:
         passwd = os.environ['OUT_PASSWORD']
     except KeyError:
-        logging.warning("Cannot read output database password from environment variable OUT_PASSWORD")
+        logging.warning(
+            "Cannot read output database password from environment variable OUT_PASSWORD")
         raise
 
-    output_db_url = dbapi + "://" + user + ":" + passwd + "@" + host + ":" + port + "/" + database
+    output_db_url = dbapi + "://" + user + ":" + \
+        passwd + "@" + host + ":" + port + "/" + database
 
     return output_db_url
 
@@ -372,24 +395,30 @@ def _get_metadata():
     try:
         return json.loads(os.environ['PARAM_meta'])
     except KeyError:
-        logging.warning("Cannot read metadata from environment variable PARAM_meta")
+        logging.warning(
+            "Cannot read metadata from environment variable PARAM_meta")
 
 
 def _get_query():
     try:
         return os.environ['PARAM_query']
     except KeyError:
-        logging.warning("Cannot read SQL query from environment variable PARAM_query")
+        logging.warning(
+            "Cannot read SQL query from environment variable PARAM_query")
 
 
 def _get_var():
     try:
         return os.environ['PARAM_variables']
     except KeyError:
-        logging.warning("Cannot read dependent variables from environment variable PARAM_variables")
+        logging.warning(
+            "Cannot read dependent variables from environment variable PARAM_variables")
 
 # TODO (LC): why grouping is not available separately? It's present to separate categorical variables and may
-# convey the intent of the user to request specific groupings. I agree that the semantics of this field is quite fuzzy...
+# convey the intent of the user to request specific groupings. I agree
+# that the semantics of this field is quite fuzzy...
+
+
 def _get_covars():
     try:
         covars = os.environ['PARAM_covariables']
@@ -420,10 +449,13 @@ def _get_function():
     try:
         return os.environ['FUNCTION']
     except KeyError:
-        logging.warning("Cannot read function from environment variable FUNCTION")
+        logging.warning(
+            "Cannot read function from environment variable FUNCTION")
+
 
 def _get_algorithm_parameters():
-    # Don't keep the metadata, it can always be reconstructed from the list of variables and it can grow quite large
+    # Don't keep the metadata, it can always be reconstructed from the list of
+    # variables and it can grow quite large
     return {
         'query': _get_query(),
         'variables': _get_var(),
