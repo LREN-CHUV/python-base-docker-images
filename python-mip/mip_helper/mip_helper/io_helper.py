@@ -142,7 +142,7 @@ def save_error(error):
         out_file = os.environ["OUTPUT_FILE"] + '.error'
         os.write(out_file, str(error))
     except KeyError:
-        _save_results_db(error = str(error), shape = Shapes.ERROR)
+        _save_results_db(results = '', error = str(error), shape = Shapes.ERROR)
 
 
 def get_results(job_id=None, node=None, multiple_results=False):
