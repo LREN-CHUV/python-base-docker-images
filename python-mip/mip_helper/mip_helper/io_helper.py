@@ -219,7 +219,7 @@ def load_intermediate_json_results(job_ids):
 # *********************************************************************************************************************
 
 
-def _save_results_db(results, shape, result_name='', result_title=None):
+def _save_results_db(results, shape, result_name='', result_title=None, error=None):
     engine = sqlalchemy.create_engine(_get_output_db_url())
 
     sql = sqlalchemy.text("""
@@ -233,7 +233,7 @@ def _save_results_db(results, shape, result_name='', result_title=None):
                    node=_get_node(),
                    timestamp=datetime.datetime.utcnow(),
                    data=results,
-                   error=None,
+                   error=error,
                    shape=shape,
                    function=_get_function(),
                    parameters=json.dumps(_get_algorithm_parameters()),
