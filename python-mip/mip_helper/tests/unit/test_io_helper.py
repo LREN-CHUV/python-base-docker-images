@@ -186,9 +186,12 @@ def test_save_error():
         'job_id': '1',
         'node': 'test',
         'timestamp': datetime.datetime(2018, 1, 1, 0, 0),
+        'data': None,
         'error': 'mytest',
         'shape': 'text/plain+error',
         'function': 'unit-test',
+        'result_name': '',
+        'result_title': None,
         'parameters': PARAMETERS
     }
 
