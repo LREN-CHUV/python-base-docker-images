@@ -117,7 +117,9 @@ def save_results(results, shape, result_name='', result_title=None):
         out_file = os.environ["OUTPUT_FILE"] + result_name
         if (result_name):
             out_file = out_file + '.' + result_name
-        os.write(out_file, str(results))
+        f = open(out_file, 'w')
+        f.write(str(results))
+        f.close()
     except KeyError:
         _save_results_db(results, shape, result_name, result_title)
 
@@ -128,7 +130,9 @@ def results_complete():
     """
     try:
         out_file = os.environ["OUTPUT_FILE"] + '.complete'
-        os.write(out_file, '')
+        f = open(out_file, 'w')
+        f.write('')
+        f.close()
     except KeyError:
         _save_results_db(None, Shapes.WORK_COMPLETE)
 
@@ -140,7 +144,9 @@ def save_error(error):
     """
     try:
         out_file = os.environ["OUTPUT_FILE"] + '.error'
-        os.write(out_file, str(error))
+        f = open(out_file, 'w')
+        f.write(str(error))
+        f.close()
     except KeyError:
         _save_results_db(results = None, error = str(error), shape = Shapes.ERROR)
 
