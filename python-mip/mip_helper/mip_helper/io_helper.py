@@ -37,23 +37,20 @@ def fetch_data():
     Get all the needed  algorithm inputs (data, algorithm parameters, etc).
     The inputs format is described in the README file.
     """
-    engine = sqlalchemy.create_engine(_get_input_db_url())
 
     data = dict()
     var = _get_var()
     covars = _get_covars()
     metadata = _get_metadata()
 
-    try:
-        csv_file = os.environ["INPUT_FILE"]
-        try:
-            csv_separator = os.environ["CSV_SEPARATOR"]
-        except KeyError:
-            csv_separator = ","
+    csv_file = _get_optional_env_var("INPUT_FILE")
 
+    if csv_file:
+        csv_separator = _get_optional_env_var("CSV_SEPARATOR", ",")
         df = pd.read_csv(csv_file, sep=csv_separator)
-    except KeyError:
+    else:
         try:
+            engine = sqlalchemy.create_engine(_get_input_db_url())
             df = pd.read_sql_query(_get_query(), engine)
         except ProgrammingError as ex:
             logging.warning("A problem occurred while querying the database, "
@@ -113,14 +110,14 @@ def save_results(results, shape, result_name='', result_title=None):
     :param result_title: Use when storing multiple outputs.
     """
 
-    try:
-        out_file = os.environ["OUTPUT_FILE"] + result_name
+    out_file = _get_optional_env_var("OUTPUT_FILE")
+    if out_file:
         if (result_name):
             out_file = out_file + '.' + result_name
         f = open(out_file, 'w')
         f.write(str(results))
         f.close()
-    except KeyError:
+    else:
         _save_results_db(results, shape, result_name, result_title)
 
 
@@ -128,12 +125,13 @@ def results_complete():
     """
     Signal that saving multiple results has completed.
     """
-    try:
-        out_file = os.environ["OUTPUT_FILE"] + '.complete'
+    out_file = _get_optional_env_var("OUTPUT_FILE")
+    if out_file:
+        out_file = out_file + '.complete'
         f = open(out_file, 'w')
         f.write('')
         f.close()
-    except KeyError:
+    else:
         _save_results_db(None, Shapes.WORK_COMPLETE)
 
 
@@ -142,12 +140,13 @@ def save_error(error):
     Store algorithm results in the output DB.
     :param error: Error message
     """
-    try:
-        out_file = os.environ["OUTPUT_FILE"] + '.error'
+    out_file = _get_optional_env_var("OUTPUT_FILE")
+    if out_file:
+        out_file = out_file + '.error'
         f = open(out_file, 'w')
         f.write(str(error))
         f.close()
-    except KeyError:
+    else:
         _save_results_db(results = None, error = str(error), shape = Shapes.ERROR)
 
 
@@ -468,3 +467,11 @@ def _get_algorithm_parameters():
         'covariables': _get_covars(),
         'model_parameters': fetch_model_parameters()
     }
+
+
+def _get_optional_env_var(key, default=''):
+    try:
+        value = os.environ[key]
+    except KeyError:
+        value = default
+    return value
