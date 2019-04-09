@@ -1,6 +1,8 @@
 ---
 
-version: 2
+# Sample advanced CircleCI configuration: https://github.com/transcom/mymove/blob/master/.circleci/config.yml
+
+version: 2.1
 jobs:
   build:
     working_directory: ~/src
@@ -10,8 +12,11 @@ jobs:
        - CIRCLECI: true
     steps:
       - setup_remote_docker:
-          version: 17.06.0-ce
+          version: 18.06.0-ce
       - checkout
+      - restore_cache:
+          keys:
+            - pre-commit-dot-cache-{{ checksum ".pre-commit-config.yaml" }}
       - run:
           name: "Install requirements"
           command: |
@@ -21,37 +26,41 @@ jobs:
           name: "Validate code quality"
           command: |
             pre-commit run --all-files
+      - save_cache:
+          key: pre-commit-dot-cache-{{ checksum ".pre-commit-config.yaml" }}
+          paths:
+            - ~/.cache/pre-commit
       - run:
           name: "Build python-base"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-base/build.sh
+            ./python-base/build.sh
       - run:
           name: "Test python-base"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-base/tests/test.sh
+            ./python-base/tests/test.sh
       - run:
           name: "Build python-base-build"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-base-build/build.sh
+            ./python-base-build/build.sh
       - run:
           name: "Test python-base-build"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-base-build/tests/test.sh
+            ./python-base-build/tests/test.sh
       - run:
           name: "Build python-mip"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/build.sh
+            ./python-mip/build.sh
       # TODO: integration tests for python-mip
       #- run:
       #    name: "Test python-mip"
       #    command: |
-      #      PATH=$PATH:/$HOME/.captain/bin/ ./python-mip/tests/test.sh
+      #      ./python-mip/tests/test.sh
       - run:
           name: "Build python-mip-sklearn"
           command: |
-            PATH=$PATH:/$HOME/.captain/bin/ ./python-mip-sklearn/build.sh
+            ./python-mip-sklearn/build.sh
       # TODO: integration tests for python-mip-sklearn
       #- run:
       #    name: "Test python-mip-sklearn"
       #    command: |
-      #      PATH=$PATH:/$HOME/.captain/bin/ ./python-mip-sklearn/tests/test.sh
+      #      ./python-mip-sklearn/tests/test.sh
