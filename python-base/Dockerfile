@@ -1,7 +1,5 @@
 FROM python:3.6.2-slim
 
-MAINTAINER mirco.nasuti@chuv.ch
-
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION

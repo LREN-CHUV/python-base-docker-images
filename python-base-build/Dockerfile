@@ -1,11 +1,5 @@
 FROM continuumio/miniconda3:4.3.27
 
-MAINTAINER mirco.nasuti@chuv.ch
-
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION
-
 COPY requirements-dev.txt /
 
 RUN pip install -r /requirements-dev.txt
@@ -21,6 +15,10 @@ RUN apt-get update && \
     rm -rf /tmp/* /var/tmp/* /var/cache/* /var/lib/apt/lists/*
 
 RUN pip install git+https://github.com/Marigold/hadrian.git@light#subdirectory=titus
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
 
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="hbpmip/python-base-build" \

@@ -1,9 +1,0 @@
-target_image:
-  build: Dockerfile
-  image: hbpmip/python-mip
-  pre:
-    - echo "Start building python-mip"
-  post:
-    - echo "Finished python-mip"
-  test:
-    - ./tests/test.sh

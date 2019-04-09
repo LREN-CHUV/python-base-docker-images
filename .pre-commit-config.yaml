@@ -1,8 +1,14 @@
+repos:
 - repo: git://github.com/pre-commit/pre-commit-hooks
-  sha: v0.7.1
+  rev: v2.1.0
   hooks:
     - id: trailing-whitespace
     - id: end-of-file-fixer
+      exclude: .bumpversion.cfg
     - id: check-merge-conflict
     - id: check-added-large-files
     - id: check-yaml
+    - id: check-json
+    - id: pretty-format-json
+      args: ["--autofix"]
+      exclude: slack.json

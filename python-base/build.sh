@@ -18,15 +18,21 @@ get_script_dir () {
 
 cd "$(get_script_dir)"
 
-if [[ $NO_SUDO || -n "$CIRCLECI" ]]; then
-  CAPTAIN="captain"
-elif groups $USER | grep &>/dev/null '\bdocker\b'; then
-  CAPTAIN="captain"
+if [[ "$NO_SUDO" || -n "$CIRCLECI" ]]; then
+  DOCKER="docker"
+elif groups "$USER" | grep &>/dev/null '\bdocker\b'; then
+  DOCKER="docker"
 else
-  CAPTAIN="sudo captain"
+  DOCKER="sudo docker"
 fi
 
-BUILD_DATE=$(date -Iseconds) \
-  VCS_REF=$(git describe --tags --dirty) \
-  VERSION=$(git describe --tags --dirty) \
-  $CAPTAIN build
+source ./.dockerimage
+VCS_REF=$(git describe --tags --dirty | sed 's/python-base-//')
+VERSION=$(git describe --tags --dirty | sed 's/python-base-//')
+
+docker build --build-arg BUILD_DATE=$(date -Iseconds) \
+    --build-arg VCS_REF=$VCS_REF \
+    --build-arg VERSION=$VERSION \
+    --tag "$IMAGE:latest" \
+    --tag "$IMAGE:$VERSION" \
+    .
