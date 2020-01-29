@@ -21,9 +21,11 @@ from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.ensemble import GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.cluster import KMeans
 from .mixed_nb import MixedNB
+import os
 import logging
 import numpy as np
 import titus.prettypfa
+import jinja2
 
 
 def sklearn_to_pfa(estimator, types, featurizer=None):
@@ -65,40 +67,23 @@ def sklearn_to_pfa(estimator, types, featurizer=None):
 
 
 def _pfa_sgdregressor(estimator, types, featurizer):
-    """
-    Example output:
-        input: record(Data,
-            feature0: double,
-            feature1: double,
-        )
-        output: double
-        action:
-            -2.525797382870301 + 31.7004451488 * input.feature0 + 42.5005713274 * input.feature1
-    """
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Regression = record(Regression, const: double, coeff: array(double));
-    Input = {input_record}
-input: Input
-output: double
-cells:
-    // query(Query) = {{}};
-    model(Regression) = {{const: 0.0, coeff: []}};
-fcns:
-    {functions}
-action:
-    var x = {featurizer};
-    model.reg.linear(x, model)
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+    pretty_pfa = """{% extends "regressor.ppfa" %}
+{% block types %}
+Regression = record(Regression, const: double, coeff: array(double));
+{% endblock %}
+
+{% block cells %}
+model(Regression) = {const: 0.0, coeff: []};
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+model.reg.linear(x, model)
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -111,68 +96,25 @@ action:
 
 
 def _pfa_sgdclassifier(estimator, types, featurizer):
-    """
-    Example output:
-        types:
-            Query = record(Query,
-                           sql: string,
-                           variable: string,
-                           covariables: array(string));
-            Input = record(Input,
-                a: double,
-                b: double
-            );
-            Regression = record(Regression, const: double, coeff: array(double));
-        input: Input
-        output: string
-        cells:
-            query(Query) = {sql: SELECT, variable: dep, covariables: [a, b, c]};
-            model(array(Regression)) = [
-                {const: 3, coeff: [1, 2]},
-                {const: 3, coeff: [1, 4]}
-            ];
-            classes(array(string)) = [a, b, c];
-        fcns:
-            featurize = fcn(x: Input -> array(double))
-                new(array(double),
-                    x.a,
-                    x.b
-                )
-        action:
-            // TODO: define this as a function when functions start working with titus python 3
-            var x = new(array(double),
-                input.a,
-                input.b
-            );
-            var scores = a.map(model, fcn(r: Regression -> double) model.reg.linear(x, r));
-            classes[a.argmax(scores)]
-    """
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Regression = record(Regression, const: double, coeff: array(double));
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    // query(Query) = {{}};
-    model(array(Regression)) = [];
-    classes(array(string)) = [];
-fcns:
-    {functions}
-action:
-    var x = {featurizer};
-    var scores = a.map(model, fcn(r: Regression -> double) model.reg.linear(x, r));
-    classes[a.argmax(scores)]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+Regression = record(Regression, const: double, coeff: array(double));
+{% endblock %}
+
+{% block cells %}
+model(array(Regression)) = [];
+classes(array(string)) = [];
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+var scores = a.map(model, fcn(r: Regression -> double) model.reg.linear(x, r));
+classes[a.argmax(scores)]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -194,32 +136,26 @@ def _pfa_mlpregressor(estimator, types, featurizer):
     """
     See https://github.com/opendatagroup/hadrian/wiki/Basic-neural-network
     """
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Layer = record(Layer,
-                   weights: array(array(double)),
-                   bias: array(double));
-    Input = {input_record}
-input: Input
-output: double
-cells:
-    neuralnet(array(Layer)) = [];
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var activation = model.neural.simpleLayers(x, neuralnet, fcn(x: double -> double) m.link.relu(x));
-    activation[0]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+    pretty_pfa = """{% extends "regressor.ppfa" %}
+{% block types %}
+Layer = record(Layer,
+               weights: array(array(double)),
+               bias: array(double));
+{% endblock %}
+
+{% block cells %}
+neuralnet(array(Layer)) = [];
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+var activation = model.neural.simpleLayers(x, neuralnet, fcn(x: double -> double) m.link.relu(x));
+activation[0]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -241,33 +177,27 @@ def _pfa_mlpclassifier(estimator, types, featurizer):
     """
     See https://github.com/opendatagroup/hadrian/wiki/Basic-neural-network
     """
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Layer = record(Layer,
-                   weights: array(array(double)),
-                   bias: array(double));
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    neuralnet(array(Layer)) = [];
-    classes(array(string)) = [];
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var activations = model.neural.simpleLayers(x, neuralnet, fcn(x: double -> double) m.link.relu(x));
-    classes[a.argmax(activations)]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+Layer = record(Layer,
+               weights: array(array(double)),
+               bias: array(double));
+{% endblock %}
+
+{% block cells %}
+neuralnet(array(Layer)) = [];
+classes(array(string)) = [];
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+var activations = model.neural.simpleLayers(x, neuralnet, fcn(x: double -> double) m.link.relu(x));
+classes[a.argmax(activations)]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -292,38 +222,32 @@ def _pfa_multinomialnb(estimator, types, featurizer):
     NOTE: in our use case we use mostly one-hot encoded variables, so using BernoulliNB might make
         more sense
     """
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Distribution = record(Distribution,
-                        logLikelihoods: array(double),
-                        logPrior: double);
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    model(array(Distribution)) = [];
-    classes(array(string)) = [];
-fcns:
-{functions}
-action:
-    var x = {featurizer};
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+Distribution = record(Distribution,
+                    logLikelihoods: array(double),
+                    logPrior: double);
+{% endblock %}
 
-    var classLL = a.map(model, fcn(dist: Distribution -> double) {{
-        model.naive.multinomial(x, dist.logLikelihoods) + dist.logPrior
-    }});
-    var norm = a.logsumexp(classLL);
-    var probs = a.map(classLL, fcn(x: double -> double) m.exp(x - norm));
-    classes[a.argmax(probs)]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+{% block cells %}
+model(array(Distribution)) = [];
+classes(array(string)) = [];
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+
+var classLL = a.map(model, fcn(dist: Distribution -> double) {
+    model.naive.multinomial(x, dist.logLikelihoods) + dist.logPrior
+});
+var norm = a.logsumexp(classLL);
+var probs = a.map(classLL, fcn(x: double -> double) m.exp(x - norm));
+classes[a.argmax(probs)]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -346,39 +270,33 @@ def _pfa_gaussiannb(estimator, types, featurizer):
     """
     See https://github.com/opendatagroup/hadrian/wiki/Basic-naive-bayes
     """
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Distribution = record(Distribution,
-                          stats: array(record(M, mean: double, variance: double)),
-                          logPrior: double);
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    model(array(Distribution)) = [];
-    classes(array(string)) = [];
-fcns:
-{functions}
-action:
-    var x = {featurizer};
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+Distribution = record(Distribution,
+                      stats: array(record(M, mean: double, variance: double)),
+                      logPrior: double);
+{% endblock %}
 
-    var classLL = a.map(model, fcn(dist: Distribution -> double) {{
-      model.naive.gaussian(x, dist.stats) + dist.logPrior
-    }});
+{% block cells %}
+model(array(Distribution)) = [];
+classes(array(string)) = [];
+{% endblock %}
 
-    var norm = a.logsumexp(classLL);
-    var probs = a.map(classLL, fcn(x: double -> double) m.exp(x - norm));
-    classes[a.argmax(probs)]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+{% block action %}
+var x = {{featurizer | safe}};
+
+var classLL = a.map(model, fcn(dist: Distribution -> double) {
+  model.naive.gaussian(x, dist.stats) + dist.logPrior
+});
+
+var norm = a.logsumexp(classLL);
+var probs = a.map(classLL, fcn(x: double -> double) m.exp(x - norm));
+classes[a.argmax(probs)]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -401,54 +319,48 @@ action:
 
 
 def _pfa_mixednb(estimator, types, featurizer):
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    GaussianDistribution = record(GaussianDistribution,
-                                  stats: array(record(M, mean: double, variance: double)));
-    MultinomialDistribution = record(MultinomialDistribution,
-                                     logLikelihoods: array(double));
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    gaussModel(array(GaussianDistribution)) = [];
-    multinomialModel(array(MultinomialDistribution)) = [];
-    classes(array(string)) = [];
-    logPrior(array(double)) = [];
-fcns:
-{functions}
-action:
-    var x = {featurizer};
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+GaussianDistribution = record(GaussianDistribution,
+                              stats: array(record(M, mean: double, variance: double)));
+MultinomialDistribution = record(MultinomialDistribution,
+                                 logLikelihoods: array(double));
+{% endblock %}
 
-    var gaussFeatures = if( a.len(gaussModel) > 0 ) a.len(gaussModel[0,"stats"]) else 0;
+{% block cells %}
+gaussModel(array(GaussianDistribution)) = [];
+multinomialModel(array(MultinomialDistribution)) = [];
+classes(array(string)) = [];
+logPrior(array(double)) = [];
+{% endblock %}
 
-    var gaussianLL = a.map(gaussModel, fcn(dist: GaussianDistribution -> double) {{
-        model.naive.gaussian(a.subseq(x, 0, gaussFeatures), dist.stats)
-    }});
+{% block action %}
+var x = {{featurizer | safe}};
 
-    var multinomialLL = a.map(multinomialModel, fcn(dist: MultinomialDistribution -> double) {{
-        model.naive.multinomial(a.subseq(x, gaussFeatures, a.len(x)), dist.logLikelihoods)
-    }});
+var gaussFeatures = if( a.len(gaussModel) > 0 ) a.len(gaussModel[0,"stats"]) else 0;
 
-    var classLL = logPrior;
-    if (a.len(gaussianLL) > 0)
-        classLL = la.add(classLL, gaussianLL);
-    if (a.len(multinomialLL) > 0)
-        classLL = la.add(classLL, multinomialLL);
+var gaussianLL = a.map(gaussModel, fcn(dist: GaussianDistribution -> double) {
+    model.naive.gaussian(a.subseq(x, 0, gaussFeatures), dist.stats)
+});
 
-    var norm = a.logsumexp(classLL);
-    var probs = a.map(classLL, fcn(x: double -> double) m.exp(x - norm));
-    classes[a.argmax(probs)]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+var multinomialLL = a.map(multinomialModel, fcn(dist: MultinomialDistribution -> double) {
+    model.naive.multinomial(a.subseq(x, gaussFeatures, a.len(x)), dist.logLikelihoods)
+});
+
+var classLL = logPrior;
+if (a.len(gaussianLL) > 0)
+    classLL = la.add(classLL, gaussianLL);
+if (a.len(multinomialLL) > 0)
+    classLL = la.add(classLL, multinomialLL);
+
+var norm = a.logsumexp(classLL);
+var probs = a.map(classLL, fcn(x: double -> double) m.exp(x - norm));
+classes[a.argmax(probs)]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -481,30 +393,29 @@ action:
 
 
 def _pfa_kmeans(estimator, types, featurizer):
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Cluster = record(Cluster, center: array(double), id: int);
-    Input = {input_record}
-input: Input
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block output %}
 output: int
-cells:
-    clusters(array(Cluster)) = [];
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var cluster = model.cluster.closest(x, clusters, metric.simpleEuclidean);
-    cluster.id
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+{% endblock %}
+
+{% block types %}
+Cluster = record(Cluster, center: array(double), id: int);
+{% endblock %}
+
+{% block cells %}
+clusters(array(Cluster)) = [];
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+
+var cluster = model.cluster.closest(x, clusters, metric.simpleEuclidean);
+cluster.id
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -522,36 +433,31 @@ action:
 
 def _pfa_kneighborsregressor(estimator, types, featurizer):
     """See https://github.com/opendatagroup/hadrian/wiki/Basic-nearest-neighbors"""
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Point = record(Point,
-                   x: array(double),
-                   y: double);
-    Codebook = array(Point);
-    Input = {input_record}
-input: Input
-output: double
-cells:
-    codebook(Codebook) = [];
-    nNeighbors(int) = 5;
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var neighbors = model.neighbor.nearestK(nNeighbors, x, codebook, fcn(x: array(double), p: Point -> double) {{
-        metric.simpleEuclidean(x, p.x)
-    }});
-    a.mean(a.map(neighbors, fcn(p: Point -> double) p.y))
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+    pretty_pfa = """{% extends "regressor.ppfa" %}
+{% block types %}
+Point = record(Point,
+               x: array(double),
+               y: double);
+Codebook = array(Point);
+{% endblock %}
+
+{% block cells %}
+codebook(Codebook) = [];
+nNeighbors(int) = 5;
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+
+var neighbors = model.neighbor.nearestK(nNeighbors, x, codebook, fcn(x: array(double), p: Point -> double) {
+    metric.simpleEuclidean(x, p.x)
+});
+a.mean(a.map(neighbors, fcn(p: Point -> double) p.y))
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -571,36 +477,31 @@ action:
 
 def _pfa_kneighborsclassifier(estimator, types, featurizer):
     """See https://github.com/opendatagroup/hadrian/wiki/Basic-nearest-neighbors"""
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    Point = record(Point,
-                   x: array(double),
-                   y: string);
-    Codebook = array(Point);
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    codebook(Codebook) = [];
-    nNeighbors(int) = 5;
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var neighbors = model.neighbor.nearestK(nNeighbors, x, codebook, fcn(x: array(double), p: Point -> double) {{
-        metric.simpleEuclidean(x, p.x)
-    }});
-    a.mode(a.map(neighbors, fcn(p: Point -> string) p.y))
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+Point = record(Point,
+               x: array(double),
+               y: string);
+Codebook = array(Point);
+{% endblock %}
+
+{% block cells %}
+codebook(Codebook) = [];
+nNeighbors(int) = 5;
+{% endblock %}
+
+{% block action %}
+var x = {{featurizer | safe}};
+
+var neighbors = model.neighbor.nearestK(nNeighbors, x, codebook, fcn(x: array(double), p: Point -> double) {
+    metric.simpleEuclidean(x, p.x)
+});
+a.mode(a.map(neighbors, fcn(p: Point -> string) p.y))
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     logging.info(pretty_pfa)
@@ -646,47 +547,42 @@ def make_tree(tree, node_id=0):
 
 def _pfa_gradientboostingregressor(estimator, types, featurizer):
     """See https://github.com/opendatagroup/hadrian/wiki/Basic-decision-tree"""
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    TreeNode = record(TreeNode,
-                    feature: int,
-                    operator: string,
-                    value: double,
-                    pass: union(double, TreeNode),
-                    fail: union(double, TreeNode));
-    Row = record(Row, values: array(double));
-    Input = {input_record}
-input: Input
-output: double
-cells:
-    // empty tree to satisfy type constraint; will be filled in later
-    trees(array(TreeNode)) = [];
-    // model intercept to which tree predictions are added
-    intercept(double) = 0.0;
-    learningRate(double) = 0.0;
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var row = new(Row, values: x);
+    pretty_pfa = """{% extends "regressor.ppfa" %}
+{% block types %}
+TreeNode = record(TreeNode,
+                feature: int,
+                operator: string,
+                value: double,
+                pass: union(double, TreeNode),
+                fail: union(double, TreeNode));
+Row = record(Row, values: array(double));
+{% endblock %}
 
-    var scores = a.map(trees, fcn(tree: TreeNode -> double) {{
-      model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
-        d.values[t.feature] <= t.value
-      }})
-    }});
+{% block cells %}
+// empty tree to satisfy type constraint; will be filled in later
+trees(array(TreeNode)) = [];
+// model intercept to which tree predictions are added
+intercept(double) = 0.0;
+learningRate(double) = 0.0;
+{% endblock %}
 
-    intercept + learningRate * a.sum(scores)
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+{% block action %}
+var x = {{featurizer | safe}};
+
+var row = new(Row, values: x);
+
+var scores = a.map(trees, fcn(tree: TreeNode -> double) {
+  model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {
+    d.values[t.feature] <= t.value
+  })
+});
+
+intercept + learningRate * a.sum(scores)
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
@@ -704,59 +600,54 @@ action:
 
 def _pfa_gradientboostingclassifier(estimator, types, featurizer):
     """See https://github.com/opendatagroup/hadrian/wiki/Basic-decision-tree"""
-    input_record = _input_record(types)
-
     # construct template
-    pretty_pfa = """
-types:
-    Query = record(Query,
-                   sql: string,
-                   variable: string,
-                   covariables: array(string));
-    TreeNode = record(TreeNode,
-                    feature: int,
-                    operator: string,
-                    value: double,
-                    pass: union(double, TreeNode),
-                    fail: union(double, TreeNode));
-    Row = record(Row, values: array(double));
-    Input = {input_record}
-input: Input
-output: string
-cells:
-    classes(array(string)) = [];
-    // set of trees for each class
-    classesTrees(array(array(TreeNode))) = [];
-    // model priors to which tree predictions are added
-    priors(array(double)) = [];
-    learningRate(double) = 0.0;
-fcns:
-{functions}
-action:
-    var x = {featurizer};
-    var row = new(Row, values: x);
+    pretty_pfa = """{% extends "classifier.ppfa" %}
+{% block types %}
+TreeNode = record(TreeNode,
+                feature: int,
+                operator: string,
+                value: double,
+                pass: union(double, TreeNode),
+                fail: union(double, TreeNode));
+Row = record(Row, values: array(double));
+{% endblock %}
 
-    // trees activations
-    var activations = a.map(classesTrees, fcn(trees: array(TreeNode) -> double) {{
-        var scores = a.map(trees, fcn(tree: TreeNode -> double) {{
-          model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {{
-            d.values[t.feature] <= t.value
-          }})
-        }});
-        learningRate * a.sum(scores)
-    }});
+{% block cells %}
+classes(array(string)) = [];
+// set of trees for each class
+classesTrees(array(array(TreeNode))) = [];
+// model priors to which tree predictions are added
+priors(array(double)) = [];
+learningRate(double) = 0.0;
+{% endblock %}
 
-    // add priors
-    activations = la.add(priors, activations);
+{% block action %}
+var x = {{featurizer | safe}};
 
-    // probabilities
-    var norm = a.logsumexp(activations);
-    var probs = a.map(activations, fcn(x: double -> double) m.exp(x - norm));
+var row = new(Row, values: x);
 
-    classes[a.argmax(probs)]
-    """.format(
-        input_record=input_record, featurizer=featurizer, functions=_functions()
-    ).strip()
+// trees activations
+var activations = a.map(classesTrees, fcn(trees: array(TreeNode) -> double) {
+    var scores = a.map(trees, fcn(tree: TreeNode -> double) {
+      model.tree.simpleWalk(row, tree, fcn(d: Row, t: TreeNode -> boolean) {
+        d.values[t.feature] <= t.value
+      })
+    });
+    learningRate * a.sum(scores)
+});
+
+// add priors
+activations = la.add(priors, activations);
+
+// probabilities
+var norm = a.logsumexp(activations);
+var probs = a.map(activations, fcn(x: double -> double) m.exp(x - norm));
+
+classes[a.argmax(probs)]
+{% endblock %}
+    """
+
+    pretty_pfa = _render(pretty_pfa, types, featurizer=featurizer)
 
     # compile
     pfa = titus.prettypfa.jsonNode(pretty_pfa)
@@ -786,13 +677,6 @@ new(array(double),
     """.format(inputs=',\n'.join(inputs)).strip()
 
 
-def _input_record(types):
-    s = 'record(Input'
-    for name, typ in types:
-        s += ',\n    {}: {}'.format(name, typ)
-    return s + '\n);'
-
-
 def _fix_types_compatibility(types):
     new_types = []
     for name, typ in types:
@@ -806,14 +690,8 @@ def _fix_types_compatibility(types):
     return new_types
 
 
-def _functions():
-    return """
-    arr = fcn(x: double -> array(double))
-        new(array(double), x);
-
-    C = fcn(x: string, categories: array(string) -> array(double))
-        a.map(categories, fcn(cat: string -> double) if(cat == x) 1 else 0);
-
-    standardize = fcn(x: double, mu: double, sigma: double -> double)
-        (x - mu) / sigma;
-""".strip()
+def _render(tpl, types, **context):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return jinja2.Environment(
+        loader=jinja2.FileSystemLoader(os.path.join(dir_path, 'templates')), autoescape=True
+    ).from_string(tpl).render(types=types, **context)

@@ -19,7 +19,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
 
 class MixedNB(BaseEstimator, ClassifierMixin):

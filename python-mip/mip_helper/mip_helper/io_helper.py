@@ -18,7 +18,7 @@ from .utils import is_nominal
 from .errors import UserError
 from .shapes import Shapes
 from .parameters import fetch_parameters as fetch_model_parameters
-from .errors import UserError
+
 
 # *********************************************************************************************************************
 # Initialization

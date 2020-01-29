@@ -96,6 +96,10 @@ class Standardize(Transform):
 
 
 class OneHotEncoding(Transform):
+    """Encode categorical variables as 0/1.
+    :param col: column name
+    :param enumerations: list of possible values
+    """
 
     def __init__(self, col, enumerations):
         self.col = col

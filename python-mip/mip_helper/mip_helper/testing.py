@@ -17,12 +17,12 @@ def round_dict(d, precision=3):
             try:
                 d[k] = round(v, precision)
             except TypeError:
-                d[k] = round_dict(v)
+                d[k] = round_dict(v, precision=precision)
         return d
     elif isinstance(d, list):
-        return [round_dict(v) for v in d]
+        return [round_dict(v, precision=precision) for v in d]
     elif isinstance(d, tuple):
-        return tuple([round_dict(v) for v in d])
+        return tuple([round_dict(v, precision=precision) for v in d])
     elif isinstance(d, float):
         return round(d, precision)
 

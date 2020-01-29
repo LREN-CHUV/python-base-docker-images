@@ -1,0 +1,5 @@
+{% extends "base.ppfa" %}
+
+{% block output %}
+output: string
+{% endblock %}
