@@ -5,3 +5,4 @@ pytest
 wheel>=0.30.0
 mock
 ipdb
+pygments>=2.7.4 # not directly required, pinned by Snyk to avoid a vulnerability
