@@ -3,3 +3,4 @@ scipy
 scikit-learn
 # ligthweight version of hadrian that only contains titus package
 # git+https://github.com/Marigold/hadrian.git@light#egg=titus&subdirectory=titus
+numpy>=1.22.0rc1 # not directly required, pinned by Snyk to avoid a vulnerability
