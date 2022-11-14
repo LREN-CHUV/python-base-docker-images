@@ -1,5 +1,5 @@
 pre-commit>=0.13
-setuptools>=39.0.1
+setuptools>=65.5.1
 nose
 pytest
 wheel>=0.30.0
