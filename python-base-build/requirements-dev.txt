@@ -5,3 +5,6 @@ pytest
 wheel>=0.30.0
 mock
 ipdb
+ipython>=7.16.3 # not directly required, pinned by Snyk to avoid a vulnerability
+prompt-toolkit>=3.0.13 # not directly required, pinned by Snyk to avoid a vulnerability
+pygments>=2.15.0 # not directly required, pinned by Snyk to avoid a vulnerability
