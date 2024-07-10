@@ -1,3 +1,4 @@
 wheel>=0.30.0
 setuptools>=39.0.1
 pytest
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
